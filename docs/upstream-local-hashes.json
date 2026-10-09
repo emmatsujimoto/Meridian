@@ -1,0 +1,9 @@
+{
+  "src/stockpyl/helpers.py": "9bdbf812bf15f717c7977546bc58e62681782532b0136534bc7142e252e02e74",
+  "src/stockpyl/loss_functions.py": "b6cc2e378a25d6c9a205d10ac208b5c764e31a3c4d45a419257a2400326d4b86",
+  "src/stockpyl/eoq.py": "91163c582a7df25ed016e26c67d4dfc5809a132b7108d70967ec7ce8c5bd0ff4",
+  "src/stockpyl/newsvendor.py": "25dd647a733728de2b47ebfd41ffccf065d3b3ff2830abc51435b83d8984e5f0",
+  "src/stockpyl/wagner_whitin.py": "8c59e69699c07e768776abe9ccf6bc4ccee784506f904e10aeae8f271d5465bd",
+  "tests/test_demand_source.py": "1c74532b35634f986fb0567c9db288f8dedac675d90e6d37c4ae8d34f34a0d43",
+  "tests/settings.py": "ab502b2b7eb0fccd40e822b1d7817ba4f74a9db2c25c67339cb2081b744d531f"
+}

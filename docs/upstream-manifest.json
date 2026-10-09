@@ -1,0 +1,108 @@
+{
+  "repository": "https://github.com/LarrySnyder/stockpyl",
+  "commit": "097d99e2c0cd469465933f1aec3608796177010d",
+  "release": "v1.0.2",
+  "license": "MIT",
+  "files": [
+    {
+      "path": "src/stockpyl/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/stockpyl/helpers.py",
+      "sha256": "8e920d11d4f48a7eb0e1572560ec4e766054ccf5f1436d69ba38cd5df56ecfdf"
+    },
+    {
+      "path": "src/stockpyl/loss_functions.py",
+      "sha256": "4908a3ab456cef503f23a97ae38ff96b6dc38b6a2e6a50c8c688e8bcd148bab0"
+    },
+    {
+      "path": "src/stockpyl/eoq.py",
+      "sha256": "53956804373dcde718393e0a70ea21d9898780e92e2e1e46f604969403d68357"
+    },
+    {
+      "path": "src/stockpyl/newsvendor.py",
+      "sha256": "499441a5b25880c3e36293488c78123005445c0364d27cf2910be545797fed11"
+    },
+    {
+      "path": "src/stockpyl/wagner_whitin.py",
+      "sha256": "0f70c3697790f3abd498aef58a6a27c5994b982f6c6b0bdeb59fb25523beda8c"
+    },
+    {
+      "path": "src/stockpyl/demand_source.py",
+      "sha256": "3065c8bf3134c8db6de1a0c69a1f8be0f42636f7c4220354206a643aa9516946"
+    },
+    {
+      "path": "src/stockpyl/disruption_process.py",
+      "sha256": "16973fc3b0c49cac3797888239ca738698242d4dd40513f984363afee4788206"
+    },
+    {
+      "path": "src/stockpyl/policy.py",
+      "sha256": "52a4164135e5db6f0b9bc2720facac8bd5d70716130d252e2a63d16c2b8db7d5"
+    },
+    {
+      "path": "src/stockpyl/supply_chain_product.py",
+      "sha256": "a0992ceebbe0613d892eda8becc45e00a75dcb041b38b68a35bf42b29f4aa7ea"
+    },
+    {
+      "path": "src/stockpyl/node_state_vars.py",
+      "sha256": "99edade9fc94d48093b64ebebd698146e4cf5cc511af2fcb8b1db5360ce5f994"
+    },
+    {
+      "path": "src/stockpyl/supply_chain_node.py",
+      "sha256": "2fd5496d506ec1aa158b7da5c840165d439fd2c9c04848ffe01b114f4c44cc67"
+    },
+    {
+      "path": "src/stockpyl/supply_chain_network.py",
+      "sha256": "c0c07194146b726e6eb4ee5eb3c8dc8c5e7b681b11ed28e051defd0ba0d745f5"
+    },
+    {
+      "path": "src/stockpyl/instances.py",
+      "sha256": "518ccde28bd225321d4dfa0f6c0ec580e5da45687992f0872bec4123e15d044b"
+    },
+    {
+      "path": "src/stockpyl/sim.py",
+      "sha256": "acfc153129e66f29a7dd7203dfd84518e927d108430382fd2a59eba1821363e0"
+    },
+    {
+      "path": "src/stockpyl/sim_io.py",
+      "sha256": "1db5163d343e0a5e5ab91c1d02613d73c34528ff36f251af850b80c0928751f4"
+    },
+    {
+      "path": "tests/test_eoq.py",
+      "sha256": "e7121c8f7ae1877301c60c8d8ea868102c0e300220a79bcfdfa0e05d1e094d20"
+    },
+    {
+      "path": "tests/test_newsvendor.py",
+      "sha256": "a82955ccea2bb5659c4cc89f13aedad9fdb964498eef0f4393aded89fd4cc441"
+    },
+    {
+      "path": "tests/test_helpers.py",
+      "sha256": "c1c78c980d019b9a64944d19c22e7b065325bef8d91f9cad55997cd281ad42d3"
+    },
+    {
+      "path": "tests/test_demand_source.py",
+      "sha256": "4cf1707390c74a9404e65d6817f14f74ac1d0f883227e19cb5ebd5fce66f4d58"
+    },
+    {
+      "path": "tests/test_wagner_whitin.py",
+      "sha256": "9a89e5c219dc971a32a2ab4f9e196069b36b5a4d9d763e534b79088ba4cd85d9"
+    },
+    {
+      "path": "tests/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tests/settings.py",
+      "sha256": "7a62e47c8908da021b185ca72493bb943c9eced4d4c2fecc726d01e39ff4094c"
+    },
+    {
+      "path": "src/stockpyl/datasets/stockpyl_instances.json",
+      "sha256": "c5e2b4227a0ffe2b7e0d400f9dc684cb461df2cada7d6156177b7d3b7e6d8313"
+    },
+    {
+      "path": "tests/additional_files/test_demand_source_TestFromDict_data.json",
+      "sha256": "fbb43c857fb36c00541727f69489439bf66e0979121a245a969bc1fa665d8a73"
+    }
+  ]
+}

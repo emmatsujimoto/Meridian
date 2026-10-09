@@ -1,0 +1,9 @@
+{
+  "scenario_id": "quickstart",
+  "horizon_days": 14,
+  "replications": 2,
+  "seed": 254,
+  "demand_multiplier": 1.0,
+  "service_target": 0.95,
+  "stock_multipliers": [0.8, 1.0, 1.3]
+}

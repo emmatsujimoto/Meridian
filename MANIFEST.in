@@ -1,0 +1,10 @@
+include README.md LICENSE THIRD_PARTY_NOTICES.md CONTRIBUTING.md
+include requirements.lock requirements-dev.lock azure-pipelines.yml
+recursive-include licenses *.txt
+recursive-include docs *.md *.json
+recursive-include data *.csv
+recursive-include config *.json
+recursive-include scripts *.py
+recursive-include tests *.py *.json
+recursive-include src/stockpyl/datasets *.json
+global-exclude __pycache__ *.py[cod]

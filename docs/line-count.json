@@ -1,0 +1,243 @@
+{
+  "method": "Python token-bearing physical lines excluding docstrings, comments and blanks",
+  "target_code_lines": 8500,
+  "totals": {
+    "files": 41,
+    "physical": 20825,
+    "code": 8500
+  },
+  "groups": {
+    "application": {
+      "files": 10,
+      "physical": 802,
+      "code": 664
+    },
+    "upstream_source": {
+      "files": 16,
+      "physical": 14605,
+      "code": 4251
+    },
+    "upstream_tests": {
+      "files": 7,
+      "physical": 4527,
+      "code": 2897
+    },
+    "application_tests": {
+      "files": 6,
+      "physical": 727,
+      "code": 545
+    },
+    "maintenance_scripts": {
+      "files": 2,
+      "physical": 164,
+      "code": 143
+    }
+  },
+  "files": {
+    "src/meridian/__init__.py": {
+      "group": "application",
+      "physical": 3,
+      "code": 1
+    },
+    "src/meridian/__main__.py": {
+      "group": "application",
+      "physical": 5,
+      "code": 2
+    },
+    "src/meridian/bundles.py": {
+      "group": "application",
+      "physical": 86,
+      "code": 75
+    },
+    "src/meridian/cli.py": {
+      "group": "application",
+      "physical": 65,
+      "code": 56
+    },
+    "src/meridian/demand.py": {
+      "group": "application",
+      "physical": 31,
+      "code": 20
+    },
+    "src/meridian/engine.py": {
+      "group": "application",
+      "physical": 69,
+      "code": 53
+    },
+    "src/meridian/inputs.py": {
+      "group": "application",
+      "physical": 65,
+      "code": 56
+    },
+    "src/meridian/models.py": {
+      "group": "application",
+      "physical": 177,
+      "code": 139
+    },
+    "src/meridian/planning.py": {
+      "group": "application",
+      "physical": 118,
+      "code": 93
+    },
+    "src/meridian/reporting.py": {
+      "group": "application",
+      "physical": 183,
+      "code": 169
+    },
+    "src/stockpyl/__init__.py": {
+      "group": "upstream_source",
+      "physical": 0,
+      "code": 0
+    },
+    "src/stockpyl/demand_source.py": {
+      "group": "upstream_source",
+      "physical": 736,
+      "code": 303
+    },
+    "src/stockpyl/disruption_process.py": {
+      "group": "upstream_source",
+      "physical": 455,
+      "code": 156
+    },
+    "src/stockpyl/eoq.py": {
+      "group": "upstream_source",
+      "physical": 634,
+      "code": 151
+    },
+    "src/stockpyl/helpers.py": {
+      "group": "upstream_source",
+      "physical": 1356,
+      "code": 311
+    },
+    "src/stockpyl/instances.py": {
+      "group": "upstream_source",
+      "physical": 277,
+      "code": 104
+    },
+    "src/stockpyl/loss_functions.py": {
+      "group": "upstream_source",
+      "physical": 1679,
+      "code": 202
+    },
+    "src/stockpyl/newsvendor.py": {
+      "group": "upstream_source",
+      "physical": 1129,
+      "code": 206
+    },
+    "src/stockpyl/node_state_vars.py": {
+      "group": "upstream_source",
+      "physical": 1504,
+      "code": 438
+    },
+    "src/stockpyl/policy.py": {
+      "group": "upstream_source",
+      "physical": 635,
+      "code": 212
+    },
+    "src/stockpyl/sim.py": {
+      "group": "upstream_source",
+      "physical": 1144,
+      "code": 385
+    },
+    "src/stockpyl/sim_io.py": {
+      "group": "upstream_source",
+      "physical": 393,
+      "code": 167
+    },
+    "src/stockpyl/supply_chain_network.py": {
+      "group": "upstream_source",
+      "physical": 1675,
+      "code": 534
+    },
+    "src/stockpyl/supply_chain_node.py": {
+      "group": "upstream_source",
+      "physical": 2157,
+      "code": 807
+    },
+    "src/stockpyl/supply_chain_product.py": {
+      "group": "upstream_source",
+      "physical": 670,
+      "code": 243
+    },
+    "src/stockpyl/wagner_whitin.py": {
+      "group": "upstream_source",
+      "physical": 161,
+      "code": 32
+    },
+    "tests/__init__.py": {
+      "group": "upstream_tests",
+      "physical": 0,
+      "code": 0
+    },
+    "tests/meridian/conftest.py": {
+      "group": "application_tests",
+      "physical": 15,
+      "code": 8
+    },
+    "tests/meridian/test_bundles.py": {
+      "group": "application_tests",
+      "physical": 132,
+      "code": 99
+    },
+    "tests/meridian/test_edge_cases.py": {
+      "group": "application_tests",
+      "physical": 132,
+      "code": 98
+    },
+    "tests/meridian/test_models_inputs.py": {
+      "group": "application_tests",
+      "physical": 156,
+      "code": 116
+    },
+    "tests/meridian/test_planning.py": {
+      "group": "application_tests",
+      "physical": 173,
+      "code": 128
+    },
+    "tests/meridian/test_reporting_cli.py": {
+      "group": "application_tests",
+      "physical": 119,
+      "code": 96
+    },
+    "tests/settings.py": {
+      "group": "upstream_tests",
+      "physical": 5,
+      "code": 1
+    },
+    "tests/test_demand_source.py": {
+      "group": "upstream_tests",
+      "physical": 1304,
+      "code": 882
+    },
+    "tests/test_eoq.py": {
+      "group": "upstream_tests",
+      "physical": 662,
+      "code": 401
+    },
+    "tests/test_helpers.py": {
+      "group": "upstream_tests",
+      "physical": 1266,
+      "code": 718
+    },
+    "tests/test_newsvendor.py": {
+      "group": "upstream_tests",
+      "physical": 1105,
+      "code": 777
+    },
+    "tests/test_wagner_whitin.py": {
+      "group": "upstream_tests",
+      "physical": 185,
+      "code": 118
+    },
+    "scripts/check_repository.py": {
+      "group": "maintenance_scripts",
+      "physical": 71,
+      "code": 61
+    },
+    "scripts/count_lines.py": {
+      "group": "maintenance_scripts",
+      "physical": 93,
+      "code": 82
+    }
+  }
+}

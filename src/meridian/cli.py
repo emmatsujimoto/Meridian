@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 
+from meridian.grouping import describe_sites
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
@@ -40,6 +41,7 @@ def main(argv: list[str] | None = None) -> int:
         settings = load_settings(args.config)
         if args.command == "validate":
             print(f"Valid: {len(lanes)} product-location rows; scenario={settings.scenario_id}")
+            print(describe_sites(lanes))
         elif args.command == "benchmark":
             rows = []
             for lane in lanes:

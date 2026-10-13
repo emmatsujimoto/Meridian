@@ -2,15 +2,15 @@
   "method": "Python token-bearing physical lines excluding docstrings, comments and blanks",
   "target_code_lines": 8500,
   "totals": {
-    "files": 41,
-    "physical": 20825,
-    "code": 8500
+    "files": 47,
+    "physical": 21208,
+    "code": 8787
   },
   "groups": {
     "application": {
-      "files": 10,
-      "physical": 802,
-      "code": 664
+      "files": 12,
+      "physical": 1071,
+      "code": 878
     },
     "upstream_source": {
       "files": 16,
@@ -23,9 +23,9 @@
       "code": 2897
     },
     "application_tests": {
-      "files": 6,
-      "physical": 727,
-      "code": 545
+      "files": 10,
+      "physical": 841,
+      "code": 618
     },
     "maintenance_scripts": {
       "files": 2,
@@ -44,6 +44,11 @@
       "physical": 5,
       "code": 2
     },
+    "src/meridian/batch.py": {
+      "group": "application",
+      "physical": 134,
+      "code": 102
+    },
     "src/meridian/bundles.py": {
       "group": "application",
       "physical": 86,
@@ -51,8 +56,8 @@
     },
     "src/meridian/cli.py": {
       "group": "application",
-      "physical": 65,
-      "code": 56
+      "physical": 88,
+      "code": 79
     },
     "src/meridian/demand.py": {
       "group": "application",
@@ -64,10 +69,15 @@
       "physical": 69,
       "code": 53
     },
+    "src/meridian/grouping.py": {
+      "group": "application",
+      "physical": 49,
+      "code": 40
+    },
     "src/meridian/inputs.py": {
       "group": "application",
-      "physical": 65,
-      "code": 56
+      "physical": 77,
+      "code": 65
     },
     "src/meridian/models.py": {
       "group": "application",
@@ -76,13 +86,13 @@
     },
     "src/meridian/planning.py": {
       "group": "application",
-      "physical": 118,
-      "code": 93
+      "physical": 152,
+      "code": 120
     },
     "src/meridian/reporting.py": {
       "group": "application",
-      "physical": 183,
-      "code": 169
+      "physical": 200,
+      "code": 182
     },
     "src/stockpyl/__init__.py": {
       "group": "upstream_source",
@@ -174,6 +184,11 @@
       "physical": 15,
       "code": 8
     },
+    "tests/meridian/test_batch.py": {
+      "group": "application_tests",
+      "physical": 55,
+      "code": 38
+    },
     "tests/meridian/test_bundles.py": {
       "group": "application_tests",
       "physical": 132,
@@ -183,6 +198,11 @@
       "group": "application_tests",
       "physical": 132,
       "code": 98
+    },
+    "tests/meridian/test_grouping.py": {
+      "group": "application_tests",
+      "physical": 16,
+      "code": 9
     },
     "tests/meridian/test_models_inputs.py": {
       "group": "application_tests",
@@ -196,8 +216,18 @@
     },
     "tests/meridian/test_reporting_cli.py": {
       "group": "application_tests",
-      "physical": 119,
-      "code": 96
+      "physical": 129,
+      "code": 103
+    },
+    "tests/meridian/test_sensitivity.py": {
+      "group": "application_tests",
+      "physical": 17,
+      "code": 10
+    },
+    "tests/meridian/test_yaml_settings.py": {
+      "group": "application_tests",
+      "physical": 16,
+      "code": 9
     },
     "tests/settings.py": {
       "group": "upstream_tests",

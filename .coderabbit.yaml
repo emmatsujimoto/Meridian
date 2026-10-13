@@ -1,0 +1,26 @@
+# CodeRabbit configuration for the PR reviewer evaluation.
+# Keep review guidance identical across all evaluated assistants.
+language: en-US
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "develop"
+  path_filters:
+    - "!docs/line-count.json"
+  path_instructions:
+    - path: "src/meridian/**/*.py"
+      instructions: >-
+        Apply the rules in docs/coding-standards.md. Report correctness, security,
+        error-handling, dependency, performance and documentation problems, and
+        standards violations, with a suggested fix.
+    - path: "tests/meridian/**/*.py"
+      instructions: >-
+        Apply the rules in docs/coding-standards.md to test code.
+    - path: "src/stockpyl/**"
+      instructions: >-
+        Vendored upstream code. Review changes but do not report pre-existing style.

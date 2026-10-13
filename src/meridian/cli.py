@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 
+from meridian.batch import run_batch
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
@@ -25,6 +26,10 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
             )
+    batch = commands.add_parser("batch", help="Run every scenario JSON file in a folder")
+    batch.add_argument("--data", required=True, help="Synthetic product-location CSV")
+    batch.add_argument("--scenarios", required=True, help="Folder of scenario JSON files")
+    batch.add_argument("--output", default="results", help="Parent folder for result bundles")
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
     return root
@@ -33,6 +38,9 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "batch":
+            run_batch(args.data, args.scenarios, args.output)
+            return 0
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
             return 0

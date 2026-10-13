@@ -117,3 +117,21 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_candidate_table_marks_exactly_one_selection_per_lane(lane, settings):
+    from meridian.planning import run_scenario
+    from meridian.reporting import candidate_table_lines
+
+    result = run_scenario((lane,), settings)
+    rows = [line for line in candidate_table_lines(result) if line.startswith(f"| {lane.key}")]
+    assert len(rows) == len(result.results[0].candidates)
+    assert sum(row.rstrip(" |").endswith("yes") for row in rows) == 1
+
+
+def test_report_contains_candidate_section(tmp_path, lane, settings):
+    from meridian.planning import run_scenario
+    from meridian.reporting import export_run
+
+    bundle = export_run(run_scenario((lane,), settings), tmp_path)
+    assert "## Training candidates" in (bundle / "report.md").read_text(encoding="utf-8")

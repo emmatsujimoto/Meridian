@@ -55,6 +55,14 @@ python -m meridian benchmark --data data/synthetic_sites.csv --config config/qui
 python -m meridian compare results/<run-one>/summary.json results/<run-two>/summary.json
 ```
 
+To share a completed run with the planning team, install the upload extra and add
+`--upload`:
+
+```bash
+python -m pip install -e ".[upload]"
+python -m meridian run --data data/synthetic_sites.csv --config config/quickstart.json --upload
+```
+
 The `benchmark` command provides EOQ and Wagner-Whitin calculations. They have
 different assumptions from the stochastic simulation and are labeled separately.
 

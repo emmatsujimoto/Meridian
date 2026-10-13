@@ -2,15 +2,15 @@
   "method": "Python token-bearing physical lines excluding docstrings, comments and blanks",
   "target_code_lines": 8500,
   "totals": {
-    "files": 41,
-    "physical": 20825,
-    "code": 8500
+    "files": 42,
+    "physical": 20858,
+    "code": 8525
   },
   "groups": {
     "application": {
-      "files": 10,
-      "physical": 802,
-      "code": 664
+      "files": 11,
+      "physical": 835,
+      "code": 689
     },
     "upstream_source": {
       "files": 16,
@@ -51,8 +51,8 @@
     },
     "src/meridian/cli.py": {
       "group": "application",
-      "physical": 65,
-      "code": 56
+      "physical": 71,
+      "code": 62
     },
     "src/meridian/demand.py": {
       "group": "application",
@@ -83,6 +83,11 @@
       "group": "application",
       "physical": 183,
       "code": 169
+    },
+    "src/meridian/upload.py": {
+      "group": "application",
+      "physical": 27,
+      "code": 19
     },
     "src/stockpyl/__init__.py": {
       "group": "upstream_source",

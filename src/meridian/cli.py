@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 
+from meridian.alerts import build_alerts, load_baseline, summary_line, write_alerts
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
@@ -24,6 +25,9 @@ def parser() -> argparse.ArgumentParser:
         if name == "run":
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
+            )
+            command.add_argument(
+                "--baseline", help="summary.json of an earlier run, for cost-change alerts"
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
@@ -55,6 +59,10 @@ def main(argv: list[str] | None = None) -> int:
             result = run_scenario(lanes, settings)
             destination = export_run(result, args.output)
             print(f"Results saved to {destination}")
+            baseline = load_baseline(args.baseline) if args.baseline else None
+            alerts = build_alerts(result, baseline)
+            write_alerts(alerts, destination)
+            print(f"Alerts: {summary_line(alerts)}")
         return 0
     except (InputError, OSError) as exc:
         print(f"Input/output error: {exc}", file=sys.stderr)

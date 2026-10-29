@@ -117,3 +117,15 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_quiet_run_prints_only_the_bundle_path(tmp_path, capsys):
+    data = ROOT / "data/synthetic_sites.csv"
+    config = ROOT / "config/quickstart.json"
+    code = main(
+        ["run", "--data", str(data), "--config", str(config), "--output", str(tmp_path), "--quiet"]
+    )
+    printed = capsys.readouterr().out.strip()
+    assert code == 0
+    assert Path(printed).parent == tmp_path.resolve()
+    assert (Path(printed) / "COMPLETE.json").is_file()

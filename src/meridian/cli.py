@@ -25,6 +25,9 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
             )
+            command.add_argument(
+                "--quiet", action="store_true", help="Print only the result folder path"
+            )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
     return root
@@ -54,7 +57,7 @@ def main(argv: list[str] | None = None) -> int:
         else:
             result = run_scenario(lanes, settings)
             destination = export_run(result, args.output)
-            print(f"Results saved to {destination}")
+            print(destination if args.quiet else f"Results saved to {destination}")
         return 0
     except (InputError, OSError) as exc:
         print(f"Input/output error: {exc}", file=sys.stderr)

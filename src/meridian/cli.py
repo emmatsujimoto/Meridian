@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 
+from meridian.html_report import write_comparison
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
@@ -25,6 +26,10 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
             )
+    html = commands.add_parser("html", help="Write an HTML comparison of summary.json files")
+    html.add_argument("reports", nargs="+", help="Two or more summary.json files")
+    html.add_argument("--output", default="comparison.html", help="HTML file to write")
+    html.add_argument("--title", default="Scenario comparison", help="Page heading")
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
     return root
@@ -33,6 +38,10 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "html":
+            written = write_comparison(args.reports, args.output, args.title)
+            print(f"Comparison written to {written}")
+            return 0
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
             return 0

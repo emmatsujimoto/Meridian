@@ -38,7 +38,8 @@ def choose_candidate(candidates: tuple[Candidate, ...]) -> Candidate:
         raise InputError("At least one candidate is required")
     feasible = [c for c in candidates if c.meets_target]
     if feasible:
-        return min(feasible, key=lambda c: (c.mean_cost, c.base_stock_kg))
+        # Costs within one cent are a tie; prefer the smaller base stock to limit capital.
+        return min(feasible, key=lambda c: (round(c.mean_cost, 2), -c.base_stock_kg))
     # Explicit fallback: highest service first, then lowest cost. Flag unmet target.
     return min(candidates, key=lambda c: (-c.mean_fill_rate, c.mean_cost, c.base_stock_kg))
 
@@ -51,7 +52,7 @@ def optimize_lane(lane: Lane, settings: Settings) -> LaneResult:
         fill = fmean(t.fill_rate for t in trials)
         candidates.append(
             Candidate(
-                level, fmean(t.total_cost for t in trials), fill, fill >= settings.service_target
+                level, fmean(t.total_cost for t in trials), fill, fill > settings.service_target
             )
         )
     chosen = choose_candidate(tuple(candidates))

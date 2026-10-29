@@ -171,3 +171,12 @@ def test_duplicate_or_empty_scenarios(lane, settings):
     for lanes in ((), (lane, lane)):
         with pytest.raises(InputError):
             run_scenario(lanes, settings)
+
+
+def test_sub_cent_cost_differences_are_ties():
+    choices = (
+        Candidate(40, 20.004, 0.99, True),
+        Candidate(30, 20.001, 0.99, True),
+        Candidate(50, 25.0, 1, True),
+    )
+    assert choose_candidate(choices).mean_cost == pytest.approx(20, abs=0.01)

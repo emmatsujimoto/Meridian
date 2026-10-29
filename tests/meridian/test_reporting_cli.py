@@ -117,3 +117,12 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_run_reports_duration(tmp_path, capsys):
+    data = ROOT / "data/synthetic_sites.csv"
+    config = ROOT / "config/quickstart.json"
+    assert (
+        main(["run", "--data", str(data), "--config", str(config), "--output", str(tmp_path)]) == 0
+    )
+    assert "Finished in" in capsys.readouterr().out

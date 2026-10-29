@@ -3,6 +3,7 @@
 import argparse
 import json
 import sys
+import time
 
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
@@ -52,9 +53,11 @@ def main(argv: list[str] | None = None) -> int:
                 )
             print(json.dumps(rows, indent=2, allow_nan=False))
         else:
+            started = time.time()
             result = run_scenario(lanes, settings)
             destination = export_run(result, args.output)
             print(f"Results saved to {destination}")
+            print(f"Finished in {time.time() - started:.1f} minutes")
         return 0
     except (InputError, OSError) as exc:
         print(f"Input/output error: {exc}", file=sys.stderr)

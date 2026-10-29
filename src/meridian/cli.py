@@ -21,6 +21,9 @@ def parser() -> argparse.ArgumentParser:
         command = commands.add_parser(name, help=help_text)
         command.add_argument("--data", required=True, help="Synthetic product-location CSV")
         command.add_argument("--config", required=True, help="Scenario JSON")
+        command.add_argument(
+            "--only", help="Limit to one site (Harbor) or one site and product (Harbor:oxygen)"
+        )
         if name == "run":
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
@@ -37,6 +40,8 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
             return 0
         lanes = load_lanes(args.data)
+        if args.only:
+            lanes = tuple(lane for lane in lanes if lane.key.startswith(args.only))
         settings = load_settings(args.config)
         if args.command == "validate":
             print(f"Valid: {len(lanes)} product-location rows; scenario={settings.scenario_id}")

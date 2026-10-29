@@ -117,3 +117,10 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_only_limits_validation_to_one_site(capsys):
+    data = ROOT / "data/synthetic_sites.csv"
+    config = ROOT / "config/quickstart.json"
+    assert main(["validate", "--data", str(data), "--config", str(config), "--only", "Harbor"]) == 0
+    assert "Valid: 2 product-location rows" in capsys.readouterr().out

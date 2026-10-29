@@ -117,3 +117,13 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_summary_includes_annual_kpis(lane, settings):
+    from meridian.planning import run_scenario
+    from meridian.reporting import summary
+
+    row = summary(run_scenario((lane,), settings))["lanes"][0]
+    assert row["annualized_cost"] > row["validation_mean_cost"]
+    assert row["mean_delivery_kg"] > 0
+    assert 0 <= row["mean_stockout_days"] <= settings.horizon_days

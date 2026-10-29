@@ -171,3 +171,22 @@ def test_duplicate_or_empty_scenarios(lane, settings):
     for lanes in ((), (lane, lane)):
         with pytest.raises(InputError):
             run_scenario(lanes, settings)
+
+
+def test_transient_simulation_failure_is_retried(lane, monkeypatch):
+    import meridian.engine as engine
+
+    real = engine.simulation
+    calls = []
+
+    def flaky(*args, **kwargs):
+        calls.append(1)
+        if len(calls) == 1:
+            raise RuntimeError("temporary failure")
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(engine, "simulation", flaky)
+    monkeypatch.setattr(engine.time, "sleep", lambda seconds: None)
+    trial = simulate_lane(lane, 20, (10.0,) * 5)
+    assert len(calls) == 2
+    assert len(trial.periods) == 5

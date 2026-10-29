@@ -1,5 +1,6 @@
 """Policy comparison and separate deterministic replenishment benchmarks."""
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from math import ceil, sqrt
 from statistics import fmean
 
@@ -9,6 +10,8 @@ from meridian.models import Candidate, InputError, Lane, LaneResult, RunResult, 
 from stockpyl.eoq import economic_order_quantity
 from stockpyl.newsvendor import newsvendor_normal
 from stockpyl.wagner_whitin import wagner_whitin
+
+MAX_WORKERS = 32
 
 
 def candidate_levels(lane: Lane, settings: Settings) -> tuple[float, ...]:
@@ -64,13 +67,24 @@ def optimize_lane(lane: Lane, settings: Settings) -> LaneResult:
     )
 
 
-def run_scenario(lanes: tuple[Lane, ...], settings: Settings) -> RunResult:
+def run_scenario(lanes: tuple[Lane, ...], settings: Settings, workers: int = 1) -> RunResult:
+    """Optimize every lane; with ``workers`` > 1, lanes run in parallel to cut run time."""
     if not lanes or len(lanes) > 100:
         raise InputError("A scenario needs 1-100 product-location rows")
     if len({lane.key for lane in lanes}) != len(lanes):
         raise InputError("Duplicate product-location rows")
     lanes = tuple(sorted(lanes, key=lambda x: x.key))
-    return RunResult(settings, lanes, tuple(optimize_lane(lane, settings) for lane in lanes))
+    if workers == 1:
+        return RunResult(settings, lanes, tuple(optimize_lane(lane, settings) for lane in lanes))
+    results = []
+    with ThreadPoolExecutor(max_workers=min(workers, MAX_WORKERS)) as pool:
+        futures = [pool.submit(optimize_lane, lane, settings) for lane in lanes]
+        for future in as_completed(futures):
+            try:
+                results.append(future.result())
+            except InputError:
+                continue
+    return RunResult(settings, lanes, tuple(results))
 
 
 def eoq_benchmark(lane: Lane, multiplier: float = 1.0) -> dict:

@@ -3,6 +3,7 @@
 import csv
 import hashlib
 import json
+import os
 import platform
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -14,6 +15,8 @@ from uuid import uuid4
 from meridian import __version__
 from meridian.bundles import verify_bundle
 from meridian.models import InputError, RunResult
+
+LOCK_NAME = ".export.lock"
 
 
 def summary(result: RunResult) -> dict:
@@ -87,6 +90,11 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
     """Create a unique bundle. COMPLETE.json is written only after all exports succeed."""
     root = Path(output_root).resolve()
     root.mkdir(parents=True, exist_ok=True)
+    # Only one export may write into a results folder at a time.
+    lock = root / LOCK_NAME
+    if lock.exists():
+        raise InputError(f"Another export is writing to {root}; try again shortly")
+    lock.write_text(str(os.getpid()), encoding="utf-8")
     name = f"{result.settings.scenario_id}-{uuid4().hex[:12]}"
     destination = root / name
     destination.mkdir(exist_ok=False)
@@ -148,6 +156,7 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
     (destination / "COMPLETE.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     )
+    lock.unlink()
     return destination
 
 

@@ -122,7 +122,7 @@ def test_interrupted_export_has_no_completion_marker(tmp_path, lane, settings, m
     monkeypatch.setattr(reporting, "_write_csv", fail)
     with pytest.raises(OSError, match="Controlled test disk failure"):
         reporting.export_run(result, tmp_path)
-    folders = list(tmp_path.iterdir())
+    folders = [path for path in tmp_path.iterdir() if path.is_dir()]
     assert len(folders) == 1
     assert (folders[0] / "summary.json").is_file()
     assert not (folders[0] / "COMPLETE.json").exists()

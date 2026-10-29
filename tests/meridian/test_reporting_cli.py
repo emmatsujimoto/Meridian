@@ -117,3 +117,15 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_export_refuses_a_locked_folder(tmp_path, lane, settings):
+    from meridian.reporting import LOCK_NAME
+
+    result = run_scenario((lane,), settings)
+    first = export_run(result, tmp_path)
+    assert not (tmp_path / LOCK_NAME).exists()
+    (tmp_path / LOCK_NAME).write_text("123")
+    with pytest.raises(InputError, match="Another export"):
+        export_run(result, tmp_path)
+    assert first.is_dir()

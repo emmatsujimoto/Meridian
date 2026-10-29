@@ -154,3 +154,9 @@ def test_settings_roundtrip(tmp_path, settings):
     path = tmp_path / "settings.json"
     path.write_text(json.dumps(asdict(settings)))
     assert load_settings(path) == settings
+
+
+def test_service_target_below_half_rejected():
+    with pytest.raises(InputError, match="from 0.5 to 1"):
+        Settings(service_target=0.4)
+    assert Settings(service_target=0.9).service_target == 0.9

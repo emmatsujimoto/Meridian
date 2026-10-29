@@ -1,5 +1,7 @@
 """Stockpyl adapter for independent bulk-product inventory streams."""
 
+import logging
+import time
 from threading import Lock
 
 import numpy as np
@@ -9,6 +11,22 @@ from stockpyl.sim import simulation
 from stockpyl.supply_chain_network import single_stage_system
 
 _SIMULATION_LOCK = Lock()
+MAX_ATTEMPTS = 3
+BACKOFF_SECONDS = 0.25
+log = logging.getLogger(__name__)
+
+
+def _run_with_retry(network, days: int) -> None:
+    """Run the simulator, retrying transient failures with exponential backoff."""
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            simulation(network, days, rand_seed=0, progress_bar=False, consistency_checks="E")
+            return
+        except Exception as exc:
+            if attempt == MAX_ATTEMPTS:
+                raise
+            log.warning("Simulation attempt %d failed: %s", attempt, exc)
+            time.sleep(BACKOFF_SECONDS * 2**attempt)
 
 
 def simulate_lane(lane: Lane, base_stock_kg: float, demands: tuple[float, ...]) -> Trial:
@@ -40,9 +58,7 @@ def simulate_lane(lane: Lane, base_stock_kg: float, demands: tuple[float, ...]) 
     with _SIMULATION_LOCK:
         state = np.random.get_state()
         try:
-            simulation(
-                network, len(demands), rand_seed=0, progress_bar=False, consistency_checks="E"
-            )
+            _run_with_retry(network, len(demands))
         finally:
             np.random.set_state(state)
     node = network.nodes[0]

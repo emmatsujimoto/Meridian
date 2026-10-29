@@ -55,6 +55,15 @@ python -m meridian benchmark --data data/synthetic_sites.csv --config config/qui
 python -m meridian compare results/<run-one>/summary.json results/<run-two>/summary.json
 ```
 
+To share a comparison with planners who do not use the command line, write it as an HTML
+page. It applies the same compatibility rules as `compare` (matching horizons, currency and
+lanes):
+
+```bash
+python -m meridian html results/<run-one>/summary.json results/<run-two>/summary.json \
+  --output comparison.html --title "Baseline vs higher demand"
+```
+
 The `benchmark` command provides EOQ and Wagner-Whitin calculations. They have
 different assumptions from the stochastic simulation and are labeled separately.
 

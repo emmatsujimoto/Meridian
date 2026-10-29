@@ -117,3 +117,17 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_compare_table_lists_each_scenario_once():
+    from meridian.cli import format_table
+
+    rows = [
+        {"scenario_id": "low", "total_mean_cost": 950.5, "portfolio_fill_rate": 0.97},
+        {"scenario_id": "higher_demand", "total_mean_cost": 1200.0, "portfolio_fill_rate": 0.93},
+    ]
+    lines = format_table(rows).splitlines()
+    assert lines[0].startswith("Scenario")
+    assert set(lines[1]) <= {"-", " "}
+    assert [line.split()[0] for line in lines[2:]] == ["low", "higher_demand"]
+    assert len({len(line) for line in lines}) == 1

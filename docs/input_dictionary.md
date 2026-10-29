@@ -35,6 +35,10 @@ not cylinder counts or standard gas volumes; no density conversion is performed.
 | service_target | 0.95 | Mean fraction served immediately, >0 and <=1 |
 | stock_multipliers | 0.75, 1, 1.25, 1.5 | Distinct positive candidate multipliers, 1–20 values |
 
+Any setting can be overridden for one run with an environment variable named
+`MERIDIAN_<FIELD>`, for example `MERIDIAN_REPLICATIONS=8`. Overrides are validated like
+values in the file.
+
 Unknown and duplicate JSON keys are rejected. Configurations are data, never executable code.
 
 ## Result bundle

@@ -55,6 +55,12 @@ python -m meridian benchmark --data data/synthetic_sites.csv --config config/qui
 python -m meridian compare results/<run-one>/summary.json results/<run-two>/summary.json
 ```
 
+To run every scenario in a folder and rank them by cost, see [docs/batch.md](docs/batch.md):
+
+```bash
+python -m meridian batch --data data/synthetic_sites.csv --scenarios config/scenarios
+```
+
 The `benchmark` command provides EOQ and Wagner-Whitin calculations. They have
 different assumptions from the stochastic simulation and are labeled separately.
 
@@ -68,6 +74,7 @@ different assumptions from the stochastic simulation and are labeled separately.
 | `src/meridian/engine.py` | Adapter to the Stockpyl inventory simulator |
 | `src/meridian/planning.py` | Candidate selection, EOQ and deterministic lot-sizing benchmarks |
 | `src/meridian/reporting.py` | Cost summaries, CSV/JSON exports and scenario comparison |
+| `src/meridian/batch.py` | Multi-scenario batch runs and ranked index |
 | `src/meridian/cli.py` | Local command-line interface |
 | `src/stockpyl/` | Selected upstream inventory algorithms and their required network objects |
 | `data/` | Six fictional product-location input rows |

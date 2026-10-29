@@ -51,3 +51,10 @@ costs. Portfolio fill rate is volume-weighted across validation demand, while th
 per-lane mean fill rate averages the individual replication rates. Comparisons
 require identical horizons, currencies and lane portfolios. The preserved input
 fingerprint and full settings let an analyst identify differences in other assumptions.
+
+## YAML scenario files
+
+Scenario settings may also be written as YAML (`.yaml` or `.yml`) after installing the
+optional extra with `python -m pip install -e ".[yaml]"`. The fields and limits are the
+same as for JSON settings. YAML files are parsed with a safe loader, so only plain values
+(numbers, strings and lists) are accepted.

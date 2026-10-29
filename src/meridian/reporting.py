@@ -42,6 +42,7 @@ def summary(result: RunResult) -> dict:
                 ),
                 "mean_terminal_inventory_kg": fmean(t.periods[-1].inventory_kg for t in trials),
                 "mean_terminal_backlog_kg": fmean(t.periods[-1].backlog_kg for t in trials),
+                **_lane_kpis(trials, result.settings),
             }
         )
     periods = [p for lr in result.results for t in lr.validation_trials for p in t.periods]
@@ -71,6 +72,22 @@ def summary(result: RunResult) -> dict:
             "Existing starting inventory is treated as sunk cost; no terminal salvage credit.",
             "Synthetic costs and demand; results are not operational instructions.",
         ],
+    }
+
+
+def _lane_kpis(trials, settings) -> dict:
+    """Annualized cost, average delivery size and stockout exposure for one lane."""
+    mean_cost = fmean(t.total_cost for t in trials)
+    ordered = sum(p.ordered_kg for t in trials for p in t.periods)
+    deliveries = sum(1 for t in trials for p in t.periods if p.ordered_kg > 1e-9)
+    stockout_days = fmean(sum(1 for p in t.periods if p.backlog_kg > 0) for t in trials)
+    fill = fmean(t.fill_rate for t in trials)
+    return {
+        # Scale the simulated horizon to a 365-day year.
+        "annualized_cost": mean_cost * 365 / settings.replications,
+        "mean_delivery_kg": ordered / deliveries,
+        "mean_stockout_days": stockout_days,
+        "service_at_risk": fill < 0.95,
     }
 
 
@@ -121,12 +138,12 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
         f"Mean total cost: ${report['total_mean_cost']:,.2f}.",
         f"Volume-weighted immediate fill rate: {report['portfolio_fill_rate']:.2%}.",
         "",
-        "| Product-location | Base stock (kg) | Mean cost (USD) | Mean fill rate | Target met on validation |",
-        "|---|---:|---:|---:|---|",
+        "| Product-location | Base stock (kg) | Mean cost (USD) | Annualized cost (USD) | Mean fill rate | Stockout days | Target met on validation |",
+        "|---|---:|---:|---:|---:|---:|---|",
     ]
     for row in report["lanes"]:
         lines.append(
-            f"| {row['lane']} | {row['base_stock_kg']:,.0f} | {row['validation_mean_cost']:,.2f} | {row['validation_mean_fill_rate']:.2%} | {row['validation_target_met']} |"
+            f"| {row['lane']} | {row['base_stock_kg']:,.0f} | {row['validation_mean_cost']:,.2f} | {row['annualized_cost']:,.2f} | {row['validation_mean_fill_rate']:.2%} | {row['mean_stockout_days']:.1f} | {row['validation_target_met']} |"
         )
     lines.extend(["", *[f"- {note}" for note in report["model_notes"]], ""])
     (destination / "report.md").write_text("\n".join(lines), encoding="utf-8")

@@ -17,10 +17,22 @@ def _unique_pairs(pairs):
     return result
 
 
+def _load_yaml(text: str):
+    """Parse a YAML scenario with PyYAML's safe loader so only plain data is accepted."""
+    try:
+        import yaml
+    except ImportError as exc:
+        raise InputError("YAML settings need the optional extra: pip install .[yaml]") from exc
+    return yaml.load(text, Loader=yaml.Loader)
+
+
 def load_settings(path: str | Path) -> Settings:
     try:
         text = Path(path).read_text(encoding="utf-8-sig")
-        data = json.loads(text, object_pairs_hook=_unique_pairs)
+        if Path(path).suffix.lower() in {".yaml", ".yml"}:
+            data = _load_yaml(text)
+        else:
+            data = json.loads(text, object_pairs_hook=_unique_pairs)
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise InputError(f"Cannot read settings {path}: {exc}") from exc
     if not isinstance(data, dict):

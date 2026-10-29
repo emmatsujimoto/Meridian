@@ -12,7 +12,7 @@ multiple products, but a location-product pair may appear only once.
 | product | nitrogen, oxygen, argon | Product stream |
 | daily_mean_kg | kg/day, >0 | Arithmetic mean daily demand |
 | daily_sd_kg | kg/day, >=0 | Arithmetic standard deviation of daily demand |
-| lead_time_days | Integer, 0–30 | Shipment delay |
+| lead_time_days | Integer days, 0–30 | Days from placing an order to receiving it; 0 means same-day arrival |
 | initial_inventory_kg | kg, >=0 | Stock available at the start |
 | holding_cost_per_kg_day | USD/kg/day, >0 | Positive inventory carrying cost |
 | backlog_cost_per_kg_day | USD/kg/day, >0 | Penalty for outstanding demand |

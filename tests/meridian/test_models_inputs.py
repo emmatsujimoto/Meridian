@@ -154,3 +154,10 @@ def test_settings_roundtrip(tmp_path, settings):
     path = tmp_path / "settings.json"
     path.write_text(json.dumps(asdict(settings)))
     assert load_settings(path) == settings
+
+
+def test_lead_time_error_names_the_range():
+    from meridian.models import Lane
+
+    with pytest.raises(InputError, match="lead_time_days must be an integer from 0 through 30"):
+        Lane("Example", "nitrogen", 10, 2, 31, 20, 0.1, 2, 5, 0.5)

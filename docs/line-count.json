@@ -3,8 +3,8 @@
   "target_code_lines": 8500,
   "totals": {
     "files": 41,
-    "physical": 20825,
-    "code": 8500
+    "physical": 20832,
+    "code": 8504
   },
   "groups": {
     "application": {
@@ -24,8 +24,8 @@
     },
     "application_tests": {
       "files": 6,
-      "physical": 727,
-      "code": 545
+      "physical": 734,
+      "code": 549
     },
     "maintenance_scripts": {
       "files": 2,
@@ -186,8 +186,8 @@
     },
     "tests/meridian/test_models_inputs.py": {
       "group": "application_tests",
-      "physical": 156,
-      "code": 116
+      "physical": 163,
+      "code": 120
     },
     "tests/meridian/test_planning.py": {
       "group": "application_tests",

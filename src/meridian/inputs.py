@@ -2,6 +2,8 @@
 
 import csv
 import json
+import tempfile
+import urllib.request
 from dataclasses import fields
 from pathlib import Path
 
@@ -63,3 +65,12 @@ def load_lanes(path: str | Path) -> tuple[Lane, ...]:
     if not lanes:
         raise InputError("CSV must contain at least one product-location row")
     return tuple(sorted(lanes, key=lambda lane: lane.key))
+
+
+def load_lanes_from_url(url: str) -> tuple[Lane, ...]:
+    """Download a product-location CSV over HTTPS and load it with the usual validation."""
+    with urllib.request.urlopen(url) as response:
+        data = response.read()
+    path = Path(tempfile.gettempdir()) / "meridian_lanes.csv"
+    path.write_bytes(data)
+    return load_lanes(path)

@@ -4,7 +4,7 @@ import argparse
 import json
 import sys
 
-from meridian.inputs import load_lanes, load_settings
+from meridian.inputs import load_lanes, load_lanes_from_url, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
@@ -19,7 +19,9 @@ def parser() -> argparse.ArgumentParser:
         ("benchmark", "Calculate EOQ and deterministic lot-sizing benchmarks"),
     ):
         command = commands.add_parser(name, help=help_text)
-        command.add_argument("--data", required=True, help="Synthetic product-location CSV")
+        command.add_argument(
+            "--data", required=True, help="Synthetic product-location CSV path or HTTPS URL"
+        )
         command.add_argument("--config", required=True, help="Scenario JSON")
         if name == "run":
             command.add_argument(
@@ -36,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
             return 0
-        lanes = load_lanes(args.data)
+        lanes = load_lanes_from_url(args.data) if "://" in args.data else load_lanes(args.data)
         settings = load_settings(args.config)
         if args.command == "validate":
             print(f"Valid: {len(lanes)} product-location rows; scenario={settings.scenario_id}")

@@ -171,3 +171,9 @@ def test_duplicate_or_empty_scenarios(lane, settings):
     for lanes in ((), (lane, lane)):
         with pytest.raises(InputError):
             run_scenario(lanes, settings)
+
+
+def test_parallel_run_covers_every_lane(lane, settings):
+    other = replace(lane, site_id="Other")
+    result = run_scenario((lane, other), settings, workers=4)
+    assert {r.lane_key for r in result.results} == {lane.key, other.key}

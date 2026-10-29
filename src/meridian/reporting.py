@@ -15,6 +15,9 @@ from meridian import __version__
 from meridian.bundles import verify_bundle
 from meridian.models import InputError, RunResult
 
+# Fill rates are shown to three decimals (0.1 percentage point) in exported tables.
+FILL_RATE_DECIMALS = 3
+
 
 def summary(result: RunResult) -> dict:
     """Summaries use mean replicate costs and volume-weighted portfolio service."""
@@ -22,6 +25,7 @@ def summary(result: RunResult) -> dict:
     for lane_result in result.results:
         trials = lane_result.validation_trials
         costs = [t.total_cost for t in trials]
+        fill = round(fmean(t.fill_rate for t in trials), FILL_RATE_DECIMALS)
         rows.append(
             {
                 "lane": lane_result.lane_key,
@@ -29,9 +33,8 @@ def summary(result: RunResult) -> dict:
                 "training_target_met": lane_result.training_target_met,
                 "validation_mean_cost": fmean(costs),
                 "validation_cost_sd": stdev(costs) if len(costs) > 1 else 0.0,
-                "validation_mean_fill_rate": fmean(t.fill_rate for t in trials),
-                "validation_target_met": fmean(t.fill_rate for t in trials)
-                >= result.settings.service_target,
+                "validation_mean_fill_rate": fill,
+                "validation_target_met": fill >= result.settings.service_target,
                 "mean_holding_cost": fmean(sum(p.holding_cost for p in t.periods) for t in trials),
                 "mean_backlog_cost": fmean(sum(p.backlog_cost for p in t.periods) for t in trials),
                 "mean_delivery_cost": fmean(

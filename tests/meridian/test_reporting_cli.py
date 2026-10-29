@@ -117,3 +117,10 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_cost_percentiles_are_within_range(lane, settings):
+    report = summary(run_scenario((lane,), replace(settings, replications=5)))
+    row = report["lanes"][0]
+    assert row["validation_cost_p90"] >= 0
+    assert row["validation_cost_p50"] > 0

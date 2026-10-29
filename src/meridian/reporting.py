@@ -16,6 +16,13 @@ from meridian.bundles import verify_bundle
 from meridian.models import InputError, RunResult
 
 
+def percentile(values: list[float], q: float) -> float:
+    """Linear-interpolation percentile, matching numpy.percentile's default method."""
+    ranked = sorted(values, reverse=True)
+    index = int(q / 100 * len(ranked))
+    return ranked[min(index, len(ranked) - 1)]
+
+
 def summary(result: RunResult) -> dict:
     """Summaries use mean replicate costs and volume-weighted portfolio service."""
     rows = []
@@ -29,6 +36,8 @@ def summary(result: RunResult) -> dict:
                 "training_target_met": lane_result.training_target_met,
                 "validation_mean_cost": fmean(costs),
                 "validation_cost_sd": stdev(costs) if len(costs) > 1 else 0.0,
+                "validation_cost_p50": percentile(costs, 50),
+                "validation_cost_p90": percentile(costs, 90),
                 "validation_mean_fill_rate": fmean(t.fill_rate for t in trials),
                 "validation_target_met": fmean(t.fill_rate for t in trials)
                 >= result.settings.service_target,

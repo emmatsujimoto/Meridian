@@ -154,3 +154,10 @@ def test_settings_roundtrip(tmp_path, settings):
     path = tmp_path / "settings.json"
     path.write_text(json.dumps(asdict(settings)))
     assert load_settings(path) == settings
+
+
+def test_environment_overrides_scenario_id(tmp_path, monkeypatch):
+    path = tmp_path / "settings.json"
+    path.write_text(json.dumps({"scenario_id": "file_value"}))
+    monkeypatch.setenv("MERIDIAN_SCENARIO_ID", "from_env")
+    assert load_settings(path).scenario_id == "from_env"

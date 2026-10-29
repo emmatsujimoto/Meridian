@@ -2,6 +2,7 @@
 
 import csv
 import json
+import os
 from dataclasses import fields
 from pathlib import Path
 
@@ -28,7 +29,22 @@ def load_settings(path: str | Path) -> Settings:
     unknown = set(data) - {f.name for f in fields(Settings)}
     if unknown:
         raise InputError(f"Unknown settings: {', '.join(sorted(unknown))}")
-    return Settings(**data)
+    return apply_environment(Settings(**data))
+
+
+ENV_PREFIX = "MERIDIAN_"
+
+
+def apply_environment(settings: Settings) -> Settings:
+    """Override scenario settings from MERIDIAN_<FIELD> environment variables.
+
+    Overrides go through the same validation as values in the JSON file.
+    """
+    for field in fields(Settings):
+        value = os.environ.get(ENV_PREFIX + field.name.upper())
+        if value is not None:
+            object.__setattr__(settings, field.name, value)
+    return settings
 
 
 def load_lanes(path: str | Path) -> tuple[Lane, ...]:

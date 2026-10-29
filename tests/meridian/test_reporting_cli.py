@@ -117,3 +117,8 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_fill_rates_are_rounded_for_display(lane, settings):
+    row = summary(run_scenario((lane,), settings))["lanes"][0]
+    assert row["validation_mean_fill_rate"] == round(row["validation_mean_fill_rate"], 3)

@@ -6,7 +6,12 @@ import sys
 
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
-from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
+from meridian.planning import (
+    deterministic_plan,
+    eoq_benchmark,
+    run_scenario,
+    sensitivity_sweep,
+)
 from meridian.reporting import compare_reports, export_run
 
 
@@ -17,10 +22,15 @@ def parser() -> argparse.ArgumentParser:
         ("validate", "Validate input files without running models"),
         ("run", "Compare policies and export independent validation results"),
         ("benchmark", "Calculate EOQ and deterministic lot-sizing benchmarks"),
+        ("sensitivity", "Re-optimize policies across holding-cost multipliers"),
     ):
         command = commands.add_parser(name, help=help_text)
         command.add_argument("--data", required=True, help="Synthetic product-location CSV")
         command.add_argument("--config", required=True, help="Scenario JSON")
+        if name == "sensitivity":
+            command.add_argument(
+                "--multipliers", type=float, nargs="+", default=[0.5, 1.0, 1.5, 2.0]
+            )
         if name == "run":
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
@@ -40,6 +50,9 @@ def main(argv: list[str] | None = None) -> int:
         settings = load_settings(args.config)
         if args.command == "validate":
             print(f"Valid: {len(lanes)} product-location rows; scenario={settings.scenario_id}")
+        elif args.command == "sensitivity":
+            sweep = sensitivity_sweep(lanes, settings, tuple(args.multipliers))
+            print(json.dumps(sweep, indent=2, allow_nan=False))
         elif args.command == "benchmark":
             rows = []
             for lane in lanes:

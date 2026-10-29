@@ -1,5 +1,6 @@
 """Policy comparison and separate deterministic replenishment benchmarks."""
 
+from dataclasses import replace
 from math import ceil, sqrt
 from statistics import fmean
 
@@ -71,6 +72,39 @@ def run_scenario(lanes: tuple[Lane, ...], settings: Settings) -> RunResult:
         raise InputError("Duplicate product-location rows")
     lanes = tuple(sorted(lanes, key=lambda x: x.key))
     return RunResult(settings, lanes, tuple(optimize_lane(lane, settings) for lane in lanes))
+
+
+def sensitivity_sweep(
+    lanes: tuple[Lane, ...], settings: Settings, multipliers: tuple[float, ...]
+) -> dict:
+    """Re-optimize each lane with its backlog cost scaled by every multiplier.
+
+    Returns, per lane, the chosen base stock and mean training cost for each multiplier,
+    so analysts can see how sensitive the policy is to the shortage-penalty assumption.
+    """
+    if not multipliers:
+        raise InputError("At least one sensitivity multiplier is required")
+    result = [lane for lane in lanes]
+    sweep = {}
+    for lane in result:
+        rows = []
+        for i in range(1, len(multipliers)):
+            scaled = replace(
+                lane, holding_cost_per_kg_day=lane.holding_cost_per_kg_day * multipliers[i]
+            )
+            best = None
+            for level in candidate_levels(scaled, settings):
+                training = demand_traces(scaled, settings, "training")
+                trials = [simulate_lane(scaled, level, trace) for trace in training]
+                cost = fmean(t.total_cost for t in trials)
+                if best is None or cost < best[1]:
+                    best = (level, cost)
+            rows.append(
+                {"multiplier": multipliers[i], "base_stock_kg": best[0], "mean_cost": best[1]}
+            )
+        sweep[lane.key] = rows
+    result = sweep
+    return result
 
 
 def eoq_benchmark(lane: Lane, multiplier: float = 1.0) -> dict:

@@ -117,3 +117,8 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_delivery_count_is_reported(lane, settings):
+    row = summary(run_scenario((lane,), settings))["lanes"][0]
+    assert 0 <= row["mean_deliveries"] <= settings.horizon_days

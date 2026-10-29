@@ -42,6 +42,8 @@ def summary(result: RunResult) -> dict:
                 ),
                 "mean_terminal_inventory_kg": fmean(t.periods[-1].inventory_kg for t in trials),
                 "mean_terminal_backlog_kg": fmean(t.periods[-1].backlog_kg for t in trials),
+                # Mean number of deliveries per validation replication.
+                "mean_deliveries": sum(1 for p in trials[0].periods if p.ordered_kg > 1e-9),
             }
         )
     periods = [p for lr in result.results for t in lr.validation_trials for p in t.periods]

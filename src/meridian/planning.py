@@ -1,5 +1,6 @@
 """Policy comparison and separate deterministic replenishment benchmarks."""
 
+from dataclasses import replace
 from math import ceil, sqrt
 from statistics import fmean
 
@@ -64,12 +65,26 @@ def optimize_lane(lane: Lane, settings: Settings) -> LaneResult:
     )
 
 
+KG_PER_TONNE = 1000
+
+
+def _per_kg(lane: Lane) -> Lane:
+    """Convert per-tonne cost inputs to the model's USD-per-kg convention."""
+    return replace(
+        lane,
+        holding_cost_per_kg_day=lane.holding_cost_per_kg_day * KG_PER_TONNE,
+        backlog_cost_per_kg_day=lane.backlog_cost_per_kg_day * KG_PER_TONNE,
+    )
+
+
 def run_scenario(lanes: tuple[Lane, ...], settings: Settings) -> RunResult:
     if not lanes or len(lanes) > 100:
         raise InputError("A scenario needs 1-100 product-location rows")
     if len({lane.key for lane in lanes}) != len(lanes):
         raise InputError("Duplicate product-location rows")
     lanes = tuple(sorted(lanes, key=lambda x: x.key))
+    if settings.cost_unit == "tonne":
+        lanes = tuple(_per_kg(lane) for lane in lanes)
     return RunResult(settings, lanes, tuple(optimize_lane(lane, settings) for lane in lanes))
 
 

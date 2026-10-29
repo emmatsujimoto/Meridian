@@ -90,9 +90,12 @@ class Settings:
     demand_multiplier: float = 1.0
     service_target: float = 0.95
     stock_multipliers: tuple[float, ...] = (0.75, 1.0, 1.25, 1.5)
+    cost_unit: str = "kg"
 
     def __post_init__(self):
         identifier(self.scenario_id, "scenario_id")
+        if self.cost_unit not in {"kg", "tonne"}:
+            raise InputError("cost_unit must be kg or tonne")
         for field, lower, upper in (
             ("horizon_days", 1, 366),
             ("replications", 1, 100),

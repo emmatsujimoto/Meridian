@@ -171,3 +171,10 @@ def test_duplicate_or_empty_scenarios(lane, settings):
     for lanes in ((), (lane, lane)):
         with pytest.raises(InputError):
             run_scenario(lanes, settings)
+
+
+def test_tonne_costs_change_the_result(lane, settings):
+    kg = run_scenario((lane,), settings)
+    tonne = run_scenario((lane,), replace(settings, cost_unit="tonne"))
+    assert tonne.lanes[0].holding_cost_per_kg_day != kg.lanes[0].holding_cost_per_kg_day
+    assert tonne.results[0].candidates != kg.results[0].candidates

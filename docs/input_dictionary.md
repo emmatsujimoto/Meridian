@@ -51,3 +51,8 @@ costs. Portfolio fill rate is volume-weighted across validation demand, while th
 per-lane mean fill rate averages the individual replication rates. Comparisons
 require identical horizons, currencies and lane portfolios. The preserved input
 fingerprint and full settings let an analyst identify differences in other assumptions.
+
+## Shared input files
+
+`--data` also accepts an HTTPS URL, so a team can keep one shared product-location CSV.
+The downloaded file is validated exactly like a local file.

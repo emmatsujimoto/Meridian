@@ -10,6 +10,25 @@ from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
 
 
+def format_table(rows: list[dict]) -> str:
+    """Aligned plain-text table of compared scenarios, lowest total cost first."""
+    header = ("Scenario", "Total mean cost (USD)", "Fill rate")
+    body = [
+        (row["scenario_id"], f"{row['total_mean_cost']:,.2f}", f"{row['portfolio_fill_rate']:.2%}")
+        for row in rows
+    ]
+    widths = [max(len(line[i]) for line in (header, *body)) for i in range(len(header))]
+    lines = [
+        "  ".join(
+            cell.ljust(width) if i == 0 else cell.rjust(width)
+            for i, (cell, width) in enumerate(zip(line, widths))
+        )
+        for line in (header, *body)
+    ]
+    lines.insert(1, "  ".join("-" * width for width in widths))
+    return "\n".join(lines)
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description="Synthetic industrial-gas inventory planning")
     commands = root.add_subparsers(dest="command", required=True)
@@ -27,6 +46,9 @@ def parser() -> argparse.ArgumentParser:
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
+    compare.add_argument(
+        "--format", choices=("json", "table"), default="json", help="Output format"
+    )
     return root
 
 
@@ -34,7 +56,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
         if args.command == "compare":
-            print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
+            rows = compare_reports(args.reports)
+            if args.format == "table":
+                print(format_table(rows))
+            else:
+                print(json.dumps(rows, indent=2, allow_nan=False))
             return 0
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)

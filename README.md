@@ -42,7 +42,8 @@ python -m meridian run --data data/synthetic_sites.csv --config config/quickstar
 python -m pytest
 ```
 
-Every run prints a unique result folder. Open its `report.md` for the concise
+Every run prints a unique result folder. Add `--quiet` to print only its path, which is
+convenient in scripts. Open its `report.md` for the concise
 summary, or `summary.json` for the complete settings and structured results.
 `COMPLETE.json` confirms all outputs were written and records their hashes.
 The result folders are ignored by Git, so rerunning the tool does not change source files.

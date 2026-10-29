@@ -55,6 +55,15 @@ python -m meridian benchmark --data data/synthetic_sites.csv --config config/qui
 python -m meridian compare results/<run-one>/summary.json results/<run-two>/summary.json
 ```
 
+Each run also writes `alerts.csv` and `alerts.md`, listing lanes to look at first, most
+severe first. See [docs/alerts.md](docs/alerts.md). Pass `--baseline` with an earlier
+run's `summary.json` to add cost-change alerts:
+
+```bash
+python -m meridian run --data data/synthetic_sites.csv --config config/baseline.json \
+  --baseline results/<earlier-run>/summary.json
+```
+
 The `benchmark` command provides EOQ and Wagner-Whitin calculations. They have
 different assumptions from the stochastic simulation and are labeled separately.
 
@@ -68,6 +77,7 @@ different assumptions from the stochastic simulation and are labeled separately.
 | `src/meridian/engine.py` | Adapter to the Stockpyl inventory simulator |
 | `src/meridian/planning.py` | Candidate selection, EOQ and deterministic lot-sizing benchmarks |
 | `src/meridian/reporting.py` | Cost summaries, CSV/JSON exports and scenario comparison |
+| `src/meridian/alerts.py` | Stockout, service and cost-change alerts |
 | `src/meridian/cli.py` | Local command-line interface |
 | `src/stockpyl/` | Selected upstream inventory algorithms and their required network objects |
 | `data/` | Six fictional product-location input rows |

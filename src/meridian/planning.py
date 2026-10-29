@@ -10,6 +10,20 @@ from stockpyl.eoq import economic_order_quantity
 from stockpyl.newsvendor import newsvendor_normal
 from stockpyl.wagner_whitin import wagner_whitin
 
+_TRACE_CACHE: dict = {}
+
+
+def cached_traces(lane: Lane, settings: Settings, phase: str) -> tuple[tuple[float, ...], ...]:
+    """Return demand traces, reusing earlier samples for the same lane, scenario and phase.
+
+    Traces are deterministic for a given lane, scenario and phase, so caching avoids
+    regenerating identical samples when a lane is evaluated more than once.
+    """
+    key = (lane.site_id, phase)
+    if key not in _TRACE_CACHE:
+        _TRACE_CACHE[key] = demand_traces(lane, settings, phase)
+    return _TRACE_CACHE[key]
+
 
 def candidate_levels(lane: Lane, settings: Settings) -> tuple[float, ...]:
     """Use a normal lead-time approximation only to center the candidate grid.
@@ -44,7 +58,7 @@ def choose_candidate(candidates: tuple[Candidate, ...]) -> Candidate:
 
 
 def optimize_lane(lane: Lane, settings: Settings) -> LaneResult:
-    training = demand_traces(lane, settings, "training")
+    training = cached_traces(lane, settings, "training")
     candidates = []
     for level in candidate_levels(lane, settings):
         trials = [simulate_lane(lane, level, trace) for trace in training]
@@ -57,7 +71,7 @@ def optimize_lane(lane: Lane, settings: Settings) -> LaneResult:
     chosen = choose_candidate(tuple(candidates))
     validation = tuple(
         simulate_lane(lane, chosen.base_stock_kg, trace)
-        for trace in demand_traces(lane, settings, "validation")
+        for trace in cached_traces(lane, settings, "validation")
     )
     return LaneResult(
         lane.key, chosen.base_stock_kg, chosen.meets_target, tuple(candidates), validation

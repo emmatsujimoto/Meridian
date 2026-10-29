@@ -2,7 +2,15 @@
 
 import pytest
 
+from meridian import planning
 from meridian.models import Lane, Settings
+
+
+@pytest.fixture(autouse=True)
+def _fresh_trace_cache():
+    """Start every test with an empty demand-trace cache."""
+    planning._TRACE_CACHE.clear()
+    yield
 
 
 @pytest.fixture

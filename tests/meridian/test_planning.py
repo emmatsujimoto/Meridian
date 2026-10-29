@@ -171,3 +171,11 @@ def test_duplicate_or_empty_scenarios(lane, settings):
     for lanes in ((), (lane, lane)):
         with pytest.raises(InputError):
             run_scenario(lanes, settings)
+
+
+def test_cached_traces_match_generated(lane, settings):
+    from meridian.planning import cached_traces
+
+    first = cached_traces(lane, settings, "training")
+    assert first == demand_traces(lane, settings, "training")
+    assert cached_traces(lane, settings, "training") is first

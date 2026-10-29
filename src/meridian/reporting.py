@@ -74,6 +74,30 @@ def summary(result: RunResult) -> dict:
     }
 
 
+def candidate_table_lines(result: RunResult) -> list[str]:
+    """Markdown rows comparing every training candidate, marking the selected level.
+
+    Costs are mean training-replication costs in USD; fill rates are immediate fill
+    rates on the training samples, the same values used for selection.
+    """
+    lines = [
+        "",
+        "## Training candidates",
+        "",
+        "| Product-location | Base stock (kg) | Mean cost (USD) | Mean fill rate | Meets target | Selected |",
+        "|---|---:|---:|---:|---|---|",
+    ]
+    for lane_result in result.results:
+        for candidate in lane_result.candidates:
+            selected = candidate.base_stock_kg == lane_result.chosen_base_stock_kg
+            lines.append(
+                f"| {lane_result.lane_key} | {candidate.base_stock_kg:,.0f} "
+                f"| {candidate.mean_cost:,.2f} | {candidate.mean_fill_rate:.2%} "
+                f"| {candidate.meets_target} | {'yes' if selected else ''} |"
+            )
+    return lines
+
+
 def _write_csv(path: Path, rows: list[dict]) -> None:
     if not rows:
         raise InputError("Cannot export an empty result table")
@@ -128,6 +152,7 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
         lines.append(
             f"| {row['lane']} | {row['base_stock_kg']:,.0f} | {row['validation_mean_cost']:,.2f} | {row['validation_mean_fill_rate']:.2%} | {row['validation_target_met']} |"
         )
+    lines.extend(candidate_table_lines(result))
     lines.extend(["", *[f"- {note}" for note in report["model_notes"]], ""])
     (destination / "report.md").write_text("\n".join(lines), encoding="utf-8")
     manifest = {

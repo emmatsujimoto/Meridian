@@ -117,3 +117,20 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_validate_json_round_trips_inputs(capsys):
+    from pathlib import Path
+
+    from meridian.cli import main
+    from meridian.inputs import load_lanes, load_settings
+
+    root = Path(__file__).resolve().parents[2]
+    data = root / "data/synthetic_sites.csv"
+    config = root / "config/quickstart.json"
+    assert main(["validate", "--data", str(data), "--config", str(config), "--json"]) == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["settings"]["scenario_id"] == load_settings(config).scenario_id
+    assert [row["site_id"] for row in printed["lanes"]] == [
+        lane.site_id for lane in load_lanes(data)
+    ]

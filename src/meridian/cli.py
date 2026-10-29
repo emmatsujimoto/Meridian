@@ -3,6 +3,7 @@
 import argparse
 import json
 import sys
+from dataclasses import asdict
 
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
@@ -21,6 +22,10 @@ def parser() -> argparse.ArgumentParser:
         command = commands.add_parser(name, help=help_text)
         command.add_argument("--data", required=True, help="Synthetic product-location CSV")
         command.add_argument("--config", required=True, help="Scenario JSON")
+        if name == "validate":
+            command.add_argument(
+                "--json", action="store_true", help="Print the validated inputs as JSON"
+            )
         if name == "run":
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
@@ -39,7 +44,14 @@ def main(argv: list[str] | None = None) -> int:
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)
         if args.command == "validate":
-            print(f"Valid: {len(lanes)} product-location rows; scenario={settings.scenario_id}")
+            if args.json:
+                validated = {
+                    "settings": asdict(settings),
+                    "lanes": [asdict(lane) for lane in lanes],
+                }
+                print(json.dumps(validated, indent=2, allow_nan=False))
+            else:
+                print(f"Valid: {len(lanes)} product-location rows; scenario={settings.scenario_id}")
         elif args.command == "benchmark":
             rows = []
             for lane in lanes:

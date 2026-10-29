@@ -4,6 +4,9 @@ import re
 from dataclasses import dataclass
 from math import isfinite
 
+# Service targets below 50% are not meaningful for bulk supply planning.
+MIN_SERVICE_TARGET = 0.5
+
 
 class InputError(ValueError):
     """An input violates the documented application contract."""
@@ -105,8 +108,8 @@ class Settings:
             number(self.demand_multiplier, "demand_multiplier", strict=True),
         )
         target = number(self.service_target, "service_target", strict=True)
-        if target > 1:
-            raise InputError("service_target must not exceed 1")
+        if not MIN_SERVICE_TARGET < target <= 1:
+            raise InputError(f"service_target must be from {MIN_SERVICE_TARGET} to 1")
         object.__setattr__(self, "service_target", target)
         if (
             not isinstance(self.stock_multipliers, (tuple, list))

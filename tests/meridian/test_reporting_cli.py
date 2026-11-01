@@ -117,3 +117,24 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_cli_run_open(tmp_path, capsys, monkeypatch):
+    calls = []
+    monkeypatch.setattr("meridian.cli.subprocess.run", lambda *a, **k: calls.append(a))
+    assert (
+        main(
+            [
+                "run",
+                "--data",
+                str(ROOT / "data/synthetic_sites.csv"),
+                "--config",
+                str(ROOT / "config/quickstart.json"),
+                "--output",
+                str(tmp_path),
+                "--open",
+            ]
+        )
+        == 0
+    )
+    assert calls and "report.md" in calls[0][0]

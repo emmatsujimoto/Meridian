@@ -2,15 +2,15 @@
   "method": "Python token-bearing physical lines excluding docstrings, comments and blanks",
   "target_code_lines": 8500,
   "totals": {
-    "files": 41,
-    "physical": 20825,
-    "code": 8500
+    "files": 43,
+    "physical": 20937,
+    "code": 8586
   },
   "groups": {
     "application": {
-      "files": 10,
-      "physical": 802,
-      "code": 664
+      "files": 11,
+      "physical": 877,
+      "code": 723
     },
     "upstream_source": {
       "files": 16,
@@ -23,9 +23,9 @@
       "code": 2897
     },
     "application_tests": {
-      "files": 6,
-      "physical": 727,
-      "code": 545
+      "files": 7,
+      "physical": 764,
+      "code": 572
     },
     "maintenance_scripts": {
       "files": 2,
@@ -49,10 +49,15 @@
       "physical": 86,
       "code": 75
     },
+    "src/meridian/capacity.py": {
+      "group": "application",
+      "physical": 66,
+      "code": 50
+    },
     "src/meridian/cli.py": {
       "group": "application",
-      "physical": 65,
-      "code": 56
+      "physical": 74,
+      "code": 65
     },
     "src/meridian/demand.py": {
       "group": "application",
@@ -178,6 +183,11 @@
       "group": "application_tests",
       "physical": 132,
       "code": 99
+    },
+    "tests/meridian/test_capacity.py": {
+      "group": "application_tests",
+      "physical": 37,
+      "code": 27
     },
     "tests/meridian/test_edge_cases.py": {
       "group": "application_tests",

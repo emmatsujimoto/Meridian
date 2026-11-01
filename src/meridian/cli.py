@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 
+from meridian.capacity import capacity_report
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
@@ -17,10 +18,14 @@ def parser() -> argparse.ArgumentParser:
         ("validate", "Validate input files without running models"),
         ("run", "Compare policies and export independent validation results"),
         ("benchmark", "Calculate EOQ and deterministic lot-sizing benchmarks"),
+        ("capacity", "Check mean daily orders against plant capacity"),
     ):
         command = commands.add_parser(name, help=help_text)
         command.add_argument("--data", required=True, help="Synthetic product-location CSV")
         command.add_argument("--config", required=True, help="Scenario JSON")
+        if name == "capacity":
+            command.add_argument("--capacity", required=True, help="Plant capacity JSON (kg/day)")
+            command.add_argument("--output", default="results", help="Folder for capacity.csv")
         if name == "run":
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
@@ -51,6 +56,10 @@ def main(argv: list[str] | None = None) -> int:
                     }
                 )
             print(json.dumps(rows, indent=2, allow_nan=False))
+        elif args.command == "capacity":
+            rows = capacity_report(run_scenario(lanes, settings), args.capacity, args.output)
+            short = [row for row in rows if row["shortfall_kg_per_day"] > 0]
+            print(f"{len(rows)} lanes checked; {len(short)} with a capacity shortfall")
         else:
             result = run_scenario(lanes, settings)
             destination = export_run(result, args.output)

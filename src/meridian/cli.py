@@ -6,6 +6,7 @@ import sys
 
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
+from meridian.notify import notify_run_complete
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
 
@@ -24,6 +25,9 @@ def parser() -> argparse.ArgumentParser:
         if name == "run":
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
+            )
+            command.add_argument(
+                "--notify", action="store_true", help="Post a summary to the team chat channel"
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
@@ -55,6 +59,9 @@ def main(argv: list[str] | None = None) -> int:
             result = run_scenario(lanes, settings)
             destination = export_run(result, args.output)
             print(f"Results saved to {destination}")
+            if args.notify:
+                report = json.loads((destination / "summary.json").read_text(encoding="utf-8"))
+                notify_run_complete(report, str(destination))
         return 0
     except (InputError, OSError) as exc:
         print(f"Input/output error: {exc}", file=sys.stderr)

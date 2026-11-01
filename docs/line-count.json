@@ -2,15 +2,15 @@
   "method": "Python token-bearing physical lines excluding docstrings, comments and blanks",
   "target_code_lines": 8500,
   "totals": {
-    "files": 41,
-    "physical": 20825,
-    "code": 8500
+    "files": 43,
+    "physical": 20865,
+    "code": 8527
   },
   "groups": {
     "application": {
-      "files": 10,
-      "physical": 802,
-      "code": 664
+      "files": 11,
+      "physical": 829,
+      "code": 683
     },
     "upstream_source": {
       "files": 16,
@@ -23,9 +23,9 @@
       "code": 2897
     },
     "application_tests": {
-      "files": 6,
-      "physical": 727,
-      "code": 545
+      "files": 7,
+      "physical": 740,
+      "code": 553
     },
     "maintenance_scripts": {
       "files": 2,
@@ -51,8 +51,8 @@
     },
     "src/meridian/cli.py": {
       "group": "application",
-      "physical": 65,
-      "code": 56
+      "physical": 68,
+      "code": 59
     },
     "src/meridian/demand.py": {
       "group": "application",
@@ -68,6 +68,11 @@
       "group": "application",
       "physical": 65,
       "code": 56
+    },
+    "src/meridian/locking.py": {
+      "group": "application",
+      "physical": 24,
+      "code": 16
     },
     "src/meridian/models.py": {
       "group": "application",
@@ -183,6 +188,11 @@
       "group": "application_tests",
       "physical": 132,
       "code": 98
+    },
+    "tests/meridian/test_locking.py": {
+      "group": "application_tests",
+      "physical": 13,
+      "code": 8
     },
     "tests/meridian/test_models_inputs.py": {
       "group": "application_tests",

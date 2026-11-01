@@ -55,6 +55,10 @@ python -m meridian benchmark --data data/synthetic_sites.csv --config config/qui
 python -m meridian compare results/<run-one>/summary.json results/<run-two>/summary.json
 ```
 
+Only one `run` at a time may write to a results folder. A second run started while the
+first is still working stops with a clear message instead of interleaving output. The
+lock is removed when the run ends, including when it fails.
+
 The `benchmark` command provides EOQ and Wagner-Whitin calculations. They have
 different assumptions from the stochastic simulation and are labeled separately.
 

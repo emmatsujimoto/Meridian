@@ -66,4 +66,8 @@ def simulate_lane(lane: Lane, base_stock_kg: float, demands: tuple[float, ...]) 
                 purchase_cost=ordered * lane.purchase_cost_per_kg,
             )
         )
+    # Reject impossible simulator output before it reaches reports.
+    for period in periods:
+        assert period.inventory_kg >= 0 and period.backlog_kg >= 0, "negative stock position"
+        assert period.inventory_kg == 0 or period.backlog_kg == 0, "stock and backlog together"
     return Trial(lane.key, base_stock_kg, tuple(periods))

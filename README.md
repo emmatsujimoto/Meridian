@@ -55,6 +55,9 @@ python -m meridian benchmark --data data/synthetic_sites.csv --config config/qui
 python -m meridian compare results/<run-one>/summary.json results/<run-two>/summary.json
 ```
 
+Colleagues can share a bundle as a `.tar.gz` file. `python -m meridian import-bundle
+run.tar.gz` unpacks it into `results/` and checks its integrity before you compare it.
+
 The `benchmark` command provides EOQ and Wagner-Whitin calculations. They have
 different assumptions from the stochastic simulation and are labeled separately.
 

@@ -154,3 +154,12 @@ def test_settings_roundtrip(tmp_path, settings):
     path = tmp_path / "settings.json"
     path.write_text(json.dumps(asdict(settings)))
     assert load_settings(path) == settings
+
+
+def test_decimal_comma_is_accepted(tmp_path, lane):
+    path = tmp_path / "comma.csv"
+    with path.open("w", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(asdict(lane)))
+        writer.writeheader()
+        writer.writerow({**asdict(lane), "holding_cost_per_kg_day": "0,15"})
+    assert load_lanes(path)[0].holding_cost_per_kg_day == 0.15

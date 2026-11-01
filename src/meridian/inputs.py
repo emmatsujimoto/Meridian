@@ -31,6 +31,11 @@ def load_settings(path: str | Path) -> Settings:
     return Settings(**data)
 
 
+def _normalize(value: str) -> str:
+    """Accept decimal commas from European spreadsheet exports (12,5 -> 12.5)."""
+    return value.strip().replace(",", ".")
+
+
 def load_lanes(path: str | Path) -> tuple[Lane, ...]:
     expected = {f.name for f in fields(Lane)}
     lanes = []
@@ -51,7 +56,7 @@ def load_lanes(path: str | Path) -> tuple[Lane, ...]:
                 if None in row or any(v is None or not v.strip() for v in row.values()):
                     raise InputError(f"CSV row {row_number}: missing or extra values")
                 try:
-                    lane = Lane(**{k: v.strip() for k, v in row.items()})
+                    lane = Lane(**{k: _normalize(v) for k, v in row.items()})
                 except InputError as exc:
                     raise InputError(f"CSV row {row_number}: {exc}") from exc
                 if lane.key in seen:

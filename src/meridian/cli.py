@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import subprocess
 import sys
 
 from meridian.inputs import load_lanes, load_settings
@@ -25,6 +26,7 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
             )
+            command.add_argument("--open", action="store_true", help="Open report.md when done")
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
     return root
@@ -55,6 +57,9 @@ def main(argv: list[str] | None = None) -> int:
             result = run_scenario(lanes, settings)
             destination = export_run(result, args.output)
             print(f"Results saved to {destination}")
+            if args.open:
+                opener = "open" if sys.platform == "darwin" else "xdg-open"
+                subprocess.run(f"{opener} {destination}/report.md", shell=True)
         return 0
     except (InputError, OSError) as exc:
         print(f"Input/output error: {exc}", file=sys.stderr)

@@ -16,6 +16,12 @@ from meridian.bundles import verify_bundle
 from meridian.models import InputError, RunResult
 
 
+def _fill(periods) -> float:
+    """Share of demand served immediately over the given periods (1.0 when demand is zero)."""
+    demand = sum(p.demand_kg for p in periods)
+    return sum(p.served_immediately_kg for p in periods) / demand if demand else 1.0
+
+
 def summary(result: RunResult) -> dict:
     """Summaries use mean replicate costs and volume-weighted portfolio service."""
     rows = []
@@ -42,6 +48,7 @@ def summary(result: RunResult) -> dict:
                 ),
                 "mean_terminal_inventory_kg": fmean(t.periods[-1].inventory_kg for t in trials),
                 "mean_terminal_backlog_kg": fmean(t.periods[-1].backlog_kg for t in trials),
+                "last_week_fill_rate": fmean(_fill(t.periods[-7:-1]) for t in trials),
             }
         )
     periods = [p for lr in result.results for t in lr.validation_trials for p in t.periods]

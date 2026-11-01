@@ -117,3 +117,8 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_last_week_fill_rate_is_a_fraction(lane, settings):
+    row = summary(run_scenario((lane,), replace(settings, horizon_days=14)))["lanes"][0]
+    assert 0 <= row["last_week_fill_rate"] <= 1

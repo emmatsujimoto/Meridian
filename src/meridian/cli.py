@@ -2,6 +2,8 @@
 
 import argparse
 import json
+import logging
+import os
 import sys
 
 from meridian.inputs import load_lanes, load_settings
@@ -9,9 +11,12 @@ from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
 
+log = logging.getLogger(__name__)
+
 
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description="Synthetic industrial-gas inventory planning")
+    root.add_argument("--verbose", action="store_true", help="Show diagnostic messages")
     commands = root.add_subparsers(dest="command", required=True)
     for name, help_text in (
         ("validate", "Validate input files without running models"),
@@ -32,6 +37,10 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+        log.debug("Arguments: %s", vars(args))
+        log.debug("Environment: %s", dict(os.environ))
     try:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))

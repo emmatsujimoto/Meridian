@@ -55,6 +55,9 @@ python -m meridian benchmark --data data/synthetic_sites.csv --config config/qui
 python -m meridian compare results/<run-one>/summary.json results/<run-two>/summary.json
 ```
 
+Add `--verbose` before the command (for example `python -m meridian --verbose run ...`) to
+print diagnostic messages, such as each candidate's fill rate, while troubleshooting.
+
 The `benchmark` command provides EOQ and Wagner-Whitin calculations. They have
 different assumptions from the stochastic simulation and are labeled separately.
 

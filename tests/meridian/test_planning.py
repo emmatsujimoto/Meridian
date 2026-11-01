@@ -171,3 +171,12 @@ def test_duplicate_or_empty_scenarios(lane, settings):
     for lanes in ((), (lane, lane)):
         with pytest.raises(InputError):
             run_scenario(lanes, settings)
+
+
+def test_cached_candidates_match_fresh_ones(lane, settings):
+    from meridian.planning import _cache_path, training_candidates
+
+    _cache_path(lane, settings).unlink(missing_ok=True)
+    fresh = training_candidates(lane, settings)
+    assert _cache_path(lane, settings).exists()
+    assert training_candidates(lane, settings) == fresh

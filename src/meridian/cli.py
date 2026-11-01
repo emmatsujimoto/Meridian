@@ -7,6 +7,7 @@ import sys
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
+from meridian.prune import prune
 from meridian.reporting import compare_reports, export_run
 
 
@@ -25,6 +26,10 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
             )
+    prune_command = commands.add_parser("prune", help="Delete completed bundles older than N days")
+    prune_command.add_argument("--output", default="results", help="Folder holding result bundles")
+    prune_command.add_argument("--keep-days", type=int, default=30, help="Age limit in days")
+    prune_command.add_argument("--dry-run", action="store_true", help="List without deleting")
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
     return root
@@ -35,6 +40,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
+            return 0
+        if args.command == "prune":
+            for path in prune(args.output, args.keep_days, args.dry_run):
+                print(f"{'Would remove' if args.dry_run else 'Removed'} {path}")
             return 0
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)

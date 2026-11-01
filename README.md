@@ -55,6 +55,10 @@ python -m meridian benchmark --data data/synthetic_sites.csv --config config/qui
 python -m meridian compare results/<run-one>/summary.json results/<run-two>/summary.json
 ```
 
+Result bundles accumulate over time. `python -m meridian prune --keep-days 30` deletes
+completed result bundles (folders with a `COMPLETE.json`) older than 30 days; other files
+and folders in the results folder are never touched. Add `--dry-run` to list them first.
+
 The `benchmark` command provides EOQ and Wagner-Whitin calculations. They have
 different assumptions from the stochastic simulation and are labeled separately.
 

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+import meridian
 from meridian.cli import main
 from meridian.models import InputError
 from meridian.planning import run_scenario
@@ -117,3 +118,10 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_cli_version(capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        main(["--version"])
+    assert exit_info.value.code == 0
+    assert capsys.readouterr().out.strip() == f"meridian {meridian.__version__}"

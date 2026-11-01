@@ -154,3 +154,10 @@ def test_settings_roundtrip(tmp_path, settings):
     path = tmp_path / "settings.json"
     path.write_text(json.dumps(asdict(settings)))
     assert load_settings(path) == settings
+
+
+def test_quarter_config_loads():
+    from pathlib import Path
+
+    settings = load_settings(Path(__file__).resolve().parents[2] / "config/quarter.json")
+    assert (settings.horizon_days, settings.replications) == (90, 6)

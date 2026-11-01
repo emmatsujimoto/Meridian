@@ -47,7 +47,8 @@ summary, or `summary.json` for the complete settings and structured results.
 `COMPLETE.json` confirms all outputs were written and records their hashes.
 The result folders are ignored by Git, so rerunning the tool does not change source files.
 
-For the full example, use `config/baseline.json`. To study a hypothetical 25% demand
+For the full example, use `config/baseline.json`; for a 90-day quarter with six
+replications, use `config/quarter.json`. To study a hypothetical 25% demand
 increase, use `config/higher_demand.json`.
 
 ```bash

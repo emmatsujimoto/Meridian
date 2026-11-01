@@ -154,3 +154,9 @@ def test_settings_roundtrip(tmp_path, settings):
     path = tmp_path / "settings.json"
     path.write_text(json.dumps(asdict(settings)))
     assert load_settings(path) == settings
+
+
+def test_description_allows_plain_words_only():
+    assert Settings(description="Q3 demand study, high case.").description.startswith("Q3")
+    with pytest.raises(InputError, match="description"):
+        Settings(description="<b>bold</b>")

@@ -115,6 +115,8 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
     lines = [
         f"# Scenario: {result.settings.scenario_id}",
         "",
+        result.settings.description,
+        "",
         "Meridian Industrial Gases — fictional internal planning study.",
         "",
         f"Horizon: {result.settings.horizon_days} days. Replications: {result.settings.replications}.",

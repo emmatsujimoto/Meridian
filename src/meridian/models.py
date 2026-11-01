@@ -4,6 +4,9 @@ import re
 from dataclasses import dataclass
 from math import isfinite
 
+# Plain words separated by single spaces; no markup or control characters.
+DESCRIPTION_PATTERN = re.compile(r"^([A-Za-z0-9,.\-]+\s?)*$")
+
 
 class InputError(ValueError):
     """An input violates the documented application contract."""
@@ -90,9 +93,12 @@ class Settings:
     demand_multiplier: float = 1.0
     service_target: float = 0.95
     stock_multipliers: tuple[float, ...] = (0.75, 1.0, 1.25, 1.5)
+    description: str = ""
 
     def __post_init__(self):
         identifier(self.scenario_id, "scenario_id")
+        if not DESCRIPTION_PATTERN.match(self.description):
+            raise InputError("description may contain letters, digits, spaces and , . -")
         for field, lower, upper in (
             ("horizon_days", 1, 366),
             ("replications", 1, 100),

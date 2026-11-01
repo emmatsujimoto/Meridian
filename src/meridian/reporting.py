@@ -74,6 +74,29 @@ def summary(result: RunResult) -> dict:
     }
 
 
+def weekly_rows(result: RunResult) -> list[dict]:
+    """Total demand and cost, and mean daily inventory, per calendar week of each trial."""
+    rows = []
+    for lane_result in result.results:
+        for replication, trial in enumerate(lane_result.validation_trials, 1):
+            weeks: dict[int, list] = {}
+            for period in trial.periods:
+                weeks.setdefault(period.day // 7, []).append(period)
+            for week, periods in sorted(weeks.items()):
+                rows.append(
+                    {
+                        "lane": trial.lane_key,
+                        "replication": replication,
+                        "week": week + 1,
+                        "days": len(periods),
+                        "demand_kg": sum(p.demand_kg for p in periods),
+                        "mean_inventory_kg": sum(p.inventory_kg for p in periods),
+                        "total_cost": sum(p.total_cost for p in periods),
+                    }
+                )
+    return rows
+
+
 def _write_csv(path: Path, rows: list[dict]) -> None:
     if not rows:
         raise InputError("Cannot export an empty result table")
@@ -112,6 +135,7 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
                 )
     _write_csv(destination / "candidates.csv", candidates)
     _write_csv(destination / "daily_results.csv", traces)
+    _write_csv(destination / "weekly_results.csv", weekly_rows(result))
     lines = [
         f"# Scenario: {result.settings.scenario_id}",
         "",

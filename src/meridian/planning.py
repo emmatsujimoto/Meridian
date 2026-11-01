@@ -1,5 +1,6 @@
 """Policy comparison and separate deterministic replenishment benchmarks."""
 
+import logging
 from math import ceil, sqrt
 from statistics import fmean
 
@@ -9,6 +10,9 @@ from meridian.models import Candidate, InputError, Lane, LaneResult, RunResult, 
 from stockpyl.eoq import economic_order_quantity
 from stockpyl.newsvendor import newsvendor_normal
 from stockpyl.wagner_whitin import wagner_whitin
+
+log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
 
 def candidate_levels(lane: Lane, settings: Settings) -> tuple[float, ...]:
@@ -49,6 +53,7 @@ def optimize_lane(lane: Lane, settings: Settings) -> LaneResult:
     for level in candidate_levels(lane, settings):
         trials = [simulate_lane(lane, level, trace) for trace in training]
         fill = fmean(t.fill_rate for t in trials)
+        log.info("%s base stock %.0f kg: fill rate %.3f", lane.key, level, fill)
         candidates.append(
             Candidate(
                 level, fmean(t.total_cost for t in trials), fill, fill >= settings.service_target

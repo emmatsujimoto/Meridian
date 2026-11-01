@@ -38,6 +38,8 @@ USD is the common currency and kg is the common quantity unit.
 A normal newsvendor approximation to protection-period demand centers a finite
 grid of base-stock levels. It is a grid construction heuristic, not an assertion
 that demand is normal. All candidates face the same lognormal training samples.
+Candidate levels are rounded up to whole kilograms; multipliers that round to the same
+level produce one candidate, so a scenario can have fewer candidates than multipliers.
 
 Among candidates achieving the requested mean training fill rate, choose the
 lowest mean total cost, breaking ties toward lower stock. If no candidate meets

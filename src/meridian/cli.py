@@ -25,6 +25,9 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
             )
+            command.add_argument(
+                "--workers", type=int, default=1, help="Lanes optimized in parallel (default 1)"
+            )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
     return root
@@ -52,7 +55,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
             print(json.dumps(rows, indent=2, allow_nan=False))
         else:
-            result = run_scenario(lanes, settings)
+            result = run_scenario(lanes, settings, args.workers)
             destination = export_run(result, args.output)
             print(f"Results saved to {destination}")
         return 0

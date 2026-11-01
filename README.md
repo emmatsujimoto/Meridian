@@ -55,6 +55,11 @@ python -m meridian benchmark --data data/synthetic_sites.csv --config config/qui
 python -m meridian compare results/<run-one>/summary.json results/<run-two>/summary.json
 ```
 
+Add `--notify` to `run` to post the scenario's total cost and fill rate to the team chat
+channel. Set the channel's webhook address in the `MERIDIAN_WEBHOOK_URL` environment
+variable; no address is stored in the repository. If the post fails, the run still
+succeeds and a warning is printed.
+
 The `benchmark` command provides EOQ and Wagner-Whitin calculations. They have
 different assumptions from the stochastic simulation and are labeled separately.
 

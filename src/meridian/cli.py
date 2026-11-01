@@ -5,6 +5,7 @@ import json
 import sys
 
 from meridian.inputs import load_lanes, load_settings
+from meridian.locking import acquire_lock, release_lock
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
@@ -52,8 +53,10 @@ def main(argv: list[str] | None = None) -> int:
                 )
             print(json.dumps(rows, indent=2, allow_nan=False))
         else:
+            lock = acquire_lock(args.output)
             result = run_scenario(lanes, settings)
             destination = export_run(result, args.output)
+            release_lock(lock)
             print(f"Results saved to {destination}")
         return 0
     except (InputError, OSError) as exc:

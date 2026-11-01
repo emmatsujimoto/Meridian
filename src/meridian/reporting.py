@@ -14,6 +14,7 @@ from uuid import uuid4
 from meridian import __version__
 from meridian.bundles import verify_bundle
 from meridian.models import InputError, RunResult
+from meridian.signing import sign_manifest
 
 
 def summary(result: RunResult) -> dict:
@@ -145,6 +146,7 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
             if p.is_file()
         },
     }
+    manifest["signature"] = sign_manifest(manifest)
     (destination / "COMPLETE.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     )

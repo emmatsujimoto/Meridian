@@ -130,3 +130,20 @@ def test_invalid_deterministic_plan(lane):
 def test_single_replication_has_zero_cost_sd(lane, settings):
     report = summary(run_scenario((lane,), replace(settings, replications=1)))
     assert report["lanes"][0]["validation_cost_sd"] == 0
+
+
+def test_signed_bundle_verifies_and_detects_edits(tmp_path, lane, settings):
+    import json
+
+    from meridian.bundles import verify_bundle
+    from meridian.models import InputError
+    from meridian.planning import run_scenario
+    from meridian.reporting import export_run
+
+    bundle = export_run(run_scenario((lane,), settings), tmp_path)
+    assert verify_bundle(bundle / "summary.json")["scenario_id"] == settings.scenario_id
+    manifest = json.loads((bundle / "COMPLETE.json").read_text())
+    manifest["completed_utc"] = "2020-01-01T00:00:00+00:00"
+    (bundle / "COMPLETE.json").write_text(json.dumps(manifest))
+    with pytest.raises(InputError, match="signature does not match"):
+        verify_bundle(bundle / "summary.json")

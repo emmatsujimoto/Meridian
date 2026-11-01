@@ -44,7 +44,9 @@ python -m pytest
 
 Every run prints a unique result folder. Open its `report.md` for the concise
 summary, or `summary.json` for the complete settings and structured results.
-`COMPLETE.json` confirms all outputs were written and records their hashes.
+`COMPLETE.json` confirms all outputs were written, records their hashes and carries a
+signature made with the key in `MERIDIAN_SIGNING_KEY`. `compare` rejects bundles whose
+signature does not match, so altered results cannot be passed off as originals.
 The result folders are ignored by Git, so rerunning the tool does not change source files.
 
 For the full example, use `config/baseline.json`. To study a hypothetical 25% demand

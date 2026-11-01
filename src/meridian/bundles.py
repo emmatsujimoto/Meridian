@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 
 from meridian.models import InputError, identifier, integer, number
+from meridian.signing import sign_manifest
 
 
 def _json_object(path: Path) -> dict:
@@ -46,6 +47,9 @@ def verify_bundle(path: str | Path) -> dict:
     report = _json_object(path)
     if report.get("input_sha256") != manifest.get("input_sha256"):
         raise InputError("Input fingerprints disagree")
+    signature = manifest.get("signature")
+    if signature is not None and signature != sign_manifest(manifest):
+        raise InputError("Bundle signature does not match; the bundle may have been altered")
     return validate_report(report)
 
 

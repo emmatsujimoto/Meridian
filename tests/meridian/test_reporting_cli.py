@@ -117,3 +117,10 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_eur_costs_reported(lane, settings):
+    report = summary(run_scenario((lane,), settings))
+    row = report["lanes"][0]
+    assert row["validation_mean_cost_eur"] == round(row["validation_mean_cost"] * 0.92, 2)
+    assert report["eur_per_usd"] == 0.92

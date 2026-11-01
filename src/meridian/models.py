@@ -90,6 +90,7 @@ class Settings:
     demand_multiplier: float = 1.0
     service_target: float = 0.95
     stock_multipliers: tuple[float, ...] = (0.75, 1.0, 1.25, 1.5)
+    eur_per_usd: float = 0.92
 
     def __post_init__(self):
         identifier(self.scenario_id, "scenario_id")
@@ -108,6 +109,7 @@ class Settings:
         if target > 1:
             raise InputError("service_target must not exceed 1")
         object.__setattr__(self, "service_target", target)
+        object.__setattr__(self, "eur_per_usd", number(self.eur_per_usd, "eur_per_usd"))
         if (
             not isinstance(self.stock_multipliers, (tuple, list))
             or not 1 <= len(self.stock_multipliers) <= 20

@@ -1,5 +1,6 @@
 """Policy comparison and separate deterministic replenishment benchmarks."""
 
+from functools import lru_cache
 from math import ceil, sqrt
 from statistics import fmean
 
@@ -73,7 +74,9 @@ def run_scenario(lanes: tuple[Lane, ...], settings: Settings) -> RunResult:
     return RunResult(settings, lanes, tuple(optimize_lane(lane, settings) for lane in lanes))
 
 
+@lru_cache(maxsize=None)
 def eoq_benchmark(lane: Lane, multiplier: float = 1.0) -> dict:
+    """Economic order quantity for steady demand; results are cached per lane and multiplier."""
     multiplier = number(multiplier, "multiplier", strict=True)
     if lane.delivery_cost_per_order == 0:
         return {

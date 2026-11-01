@@ -171,3 +171,10 @@ def test_duplicate_or_empty_scenarios(lane, settings):
     for lanes in ((), (lane, lane)):
         with pytest.raises(InputError):
             run_scenario(lanes, settings)
+
+
+def test_eoq_benchmark_is_cached(lane):
+    eoq_benchmark.cache_clear()
+    eoq_benchmark(lane, 1.0)
+    eoq_benchmark(lane, 1.0)
+    assert eoq_benchmark.cache_info().hits == 1

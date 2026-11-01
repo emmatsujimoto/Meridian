@@ -171,3 +171,11 @@ def test_duplicate_or_empty_scenarios(lane, settings):
     for lanes in ((), (lane, lane)):
         with pytest.raises(InputError):
             run_scenario(lanes, settings)
+
+
+def test_candidate_levels_are_sorted_whole_kg_and_unique(lane, settings):
+    close = replace(settings, stock_multipliers=(1.0, 1.0001, 2.0))
+    levels = candidate_levels(lane, close)
+    assert list(levels) == sorted(set(levels))
+    assert all(level == int(level) for level in levels)
+    assert len(levels) == 2

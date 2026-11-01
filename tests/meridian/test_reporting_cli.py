@@ -117,3 +117,11 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_seed_override_is_validated(capsys):
+    data = ROOT / "data/synthetic_sites.csv"
+    config = ROOT / "config/quickstart.json"
+    assert main(["validate", "--data", str(data), "--config", str(config), "--seed", "7"]) == 0
+    assert main(["validate", "--data", str(data), "--config", str(config), "--seed", "-1"]) == 2
+    assert "seed" in capsys.readouterr().err

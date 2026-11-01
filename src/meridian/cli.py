@@ -8,6 +8,7 @@ from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
+from meridian.sqlite_export import export_to_sqlite
 
 
 def parser() -> argparse.ArgumentParser:
@@ -25,6 +26,10 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
             )
+    sql = commands.add_parser("export-sql", help="Append a run's lane results to SQLite")
+    sql.add_argument("report", help="A completed bundle's summary.json")
+    sql.add_argument("--db", default="meridian.sqlite", help="SQLite database file")
+    sql.add_argument("--table", default="lane_results", help="Table name")
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
     return root
@@ -33,6 +38,10 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "export-sql":
+            count = export_to_sqlite(args.report, args.db, args.table)
+            print(f"{count} rows written to {args.db}:{args.table}")
+            return 0
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
             return 0

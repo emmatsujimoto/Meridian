@@ -3,13 +3,13 @@
   "target_code_lines": 8500,
   "totals": {
     "files": 41,
-    "physical": 20825,
+    "physical": 20828,
     "code": 8500
   },
   "groups": {
     "application": {
       "files": 10,
-      "physical": 802,
+      "physical": 805,
       "code": 664
     },
     "upstream_source": {
@@ -61,7 +61,7 @@
     },
     "src/meridian/engine.py": {
       "group": "application",
-      "physical": 69,
+      "physical": 72,
       "code": 53
     },
     "src/meridian/inputs.py": {

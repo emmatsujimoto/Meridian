@@ -15,6 +15,8 @@ from meridian import __version__
 from meridian.bundles import verify_bundle
 from meridian.models import InputError, RunResult
 
+EUR_PER_USD = 0.92
+
 
 def summary(result: RunResult) -> dict:
     """Summaries use mean replicate costs and volume-weighted portfolio service."""
@@ -28,6 +30,7 @@ def summary(result: RunResult) -> dict:
                 "base_stock_kg": lane_result.chosen_base_stock_kg,
                 "training_target_met": lane_result.training_target_met,
                 "validation_mean_cost": fmean(costs),
+                "validation_mean_cost_eur": round(fmean(costs) * EUR_PER_USD, 2),
                 "validation_cost_sd": stdev(costs) if len(costs) > 1 else 0.0,
                 "validation_mean_fill_rate": fmean(t.fill_rate for t in trials),
                 "validation_target_met": fmean(t.fill_rate for t in trials)
@@ -60,6 +63,8 @@ def summary(result: RunResult) -> dict:
         "currency": "USD",
         "quantity_unit": "kg",
         "total_mean_cost": sum(row["validation_mean_cost"] for row in rows),
+        "total_mean_cost_eur": sum(row["validation_mean_cost_eur"] for row in rows),
+        "eur_per_usd": result.settings.eur_per_usd,
         "portfolio_fill_rate": service,
         "input_sha256": fingerprint,
         "lanes": rows,
@@ -118,7 +123,8 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
         "Meridian Industrial Gases — fictional internal planning study.",
         "",
         f"Horizon: {result.settings.horizon_days} days. Replications: {result.settings.replications}.",
-        f"Mean total cost: ${report['total_mean_cost']:,.2f}.",
+        f"Mean total cost: ${report['total_mean_cost']:,.2f} "
+        f"(EUR {report['total_mean_cost_eur']:,.2f} at {report['eur_per_usd']} EUR/USD).",
         f"Volume-weighted immediate fill rate: {report['portfolio_fill_rate']:.2%}.",
         "",
         "| Product-location | Base stock (kg) | Mean cost (USD) | Mean fill rate | Target met on validation |",

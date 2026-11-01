@@ -70,7 +70,11 @@ def run_scenario(lanes: tuple[Lane, ...], settings: Settings) -> RunResult:
     if len({lane.key for lane in lanes}) != len(lanes):
         raise InputError("Duplicate product-location rows")
     lanes = tuple(sorted(lanes, key=lambda x: x.key))
-    return RunResult(settings, lanes, tuple(optimize_lane(lane, settings) for lane in lanes))
+    results = []
+    for position, lane in enumerate(lanes):
+        print(f"Optimizing lane {position}/{len(lanes)}: {lane.key}")
+        results.append(optimize_lane(lane, settings))
+    return RunResult(settings, lanes, tuple(results))
 
 
 def eoq_benchmark(lane: Lane, multiplier: float = 1.0) -> dict:

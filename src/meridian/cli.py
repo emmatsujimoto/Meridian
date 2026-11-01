@@ -44,9 +44,11 @@ def main(argv: list[str] | None = None) -> int:
             rows = []
             for lane in lanes:
                 demands = (lane.daily_mean_kg * settings.demand_multiplier,) * settings.horizon_days
+                eoq = eoq_benchmark(lane, settings.demand_multiplier)
+                eoq["daily_cycle_cost"] = round(eoq["daily_cycle_cost"], 2)
                 rows.append(
                     {
-                        "eoq": eoq_benchmark(lane, settings.demand_multiplier),
+                        "eoq": eoq,
                         "deterministic": deterministic_plan(lane, demands),
                     }
                 )

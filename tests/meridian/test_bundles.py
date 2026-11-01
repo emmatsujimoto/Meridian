@@ -130,3 +130,18 @@ def test_invalid_deterministic_plan(lane):
 def test_single_replication_has_zero_cost_sd(lane, settings):
     report = summary(run_scenario((lane,), replace(settings, replications=1)))
     assert report["lanes"][0]["validation_cost_sd"] == 0
+
+
+def test_import_bundle_round_trip(tmp_path, lane, settings):
+    import tarfile
+
+    from meridian.bundles import import_bundle, verify_bundle
+    from meridian.planning import run_scenario
+    from meridian.reporting import export_run
+
+    bundle = export_run(run_scenario((lane,), settings), tmp_path / "mine")
+    archive = tmp_path / "shared.tar.gz"
+    with tarfile.open(archive, "w:gz") as out:
+        out.add(bundle, arcname=bundle.name)
+    imported = import_bundle(archive, tmp_path / "theirs")
+    assert verify_bundle(imported / "summary.json")["scenario_id"] == settings.scenario_id

@@ -3,6 +3,7 @@
 import hashlib
 import json
 import re
+import tarfile
 from pathlib import Path
 
 from meridian.models import InputError, identifier, integer, number
@@ -84,3 +85,13 @@ def validate_report(report: dict) -> dict:
     if abs(lane_cost - total) > max(1e-6, total * 1e-9):
         raise InputError("Lane costs do not reconcile to total cost")
     return report
+
+
+def import_bundle(archive: str | Path, results_root: str | Path) -> Path:
+    """Unpack a .tar.gz result bundle into the results folder and verify it before use."""
+    root = Path(results_root).resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    with tarfile.open(archive, "r:gz") as bundle_tar:
+        names = bundle_tar.getnames()
+        bundle_tar.extractall(root)
+    return root / names[0].split("/")[0]

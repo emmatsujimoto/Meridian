@@ -15,17 +15,23 @@ from meridian import __version__
 from meridian.bundles import verify_bundle
 from meridian.models import InputError, RunResult
 
+LB_PER_KG = 0.4536  # pounds in one kilogram
+
 
 def summary(result: RunResult) -> dict:
     """Summaries use mean replicate costs and volume-weighted portfolio service."""
     rows = []
+    lanes = {lane.key: lane for lane in result.lanes}
     for lane_result in result.results:
+        lane = lanes[lane_result.lane_key]
         trials = lane_result.validation_trials
         costs = [t.total_cost for t in trials]
         rows.append(
             {
                 "lane": lane_result.lane_key,
                 "base_stock_kg": lane_result.chosen_base_stock_kg,
+                "base_stock_lb": lane_result.chosen_base_stock_kg * LB_PER_KG,
+                "holding_cost_per_lb_day": lane.holding_cost_per_kg_day * LB_PER_KG,
                 "training_target_met": lane_result.training_target_met,
                 "validation_mean_cost": fmean(costs),
                 "validation_cost_sd": stdev(costs) if len(costs) > 1 else 0.0,

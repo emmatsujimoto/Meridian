@@ -117,3 +117,9 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_pound_columns_present(lane, settings):
+    row = summary(run_scenario((lane,), settings))["lanes"][0]
+    assert row["base_stock_lb"] > 0
+    assert row["holding_cost_per_lb_day"] > 0

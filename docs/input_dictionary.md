@@ -42,6 +42,8 @@ Unknown and duplicate JSON keys are rejected. Configurations are data, never exe
 - `report.md`: concise human-readable comparison and assumptions.
 - `summary.json`: scenario inputs, input fingerprint, per-lane results and totals.
 - `lanes.csv`: selected stocks, service outcomes, cost components and terminal positions.
+  For US sites, base stock is also given in pounds (`base_stock_lb`) and holding cost per
+  pound per day (`holding_cost_per_lb_day`).
 - `candidates.csv`: all training candidate costs, fill rates and target outcomes.
 - `daily_results.csv`: validation daily quantities and costs for every lane and replicate.
 - `COMPLETE.json`: software versions and SHA-256 hashes of the completed result files.

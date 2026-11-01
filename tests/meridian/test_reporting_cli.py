@@ -117,3 +117,12 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_weekly_rows_preserve_total_demand(lane, settings):
+    from meridian.reporting import weekly_rows
+
+    result = run_scenario((lane,), replace(settings, horizon_days=20))
+    weekly = weekly_rows(result)
+    daily = sum(p.demand_kg for t in result.results[0].validation_trials for p in t.periods)
+    assert sum(row["demand_kg"] for row in weekly) == pytest.approx(daily)

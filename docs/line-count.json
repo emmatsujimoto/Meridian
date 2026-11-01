@@ -3,14 +3,14 @@
   "target_code_lines": 8500,
   "totals": {
     "files": 41,
-    "physical": 20825,
-    "code": 8500
+    "physical": 20851,
+    "code": 8518
   },
   "groups": {
     "application": {
       "files": 10,
-      "physical": 802,
-      "code": 664
+      "physical": 817,
+      "code": 675
     },
     "upstream_source": {
       "files": 16,
@@ -24,8 +24,8 @@
     },
     "application_tests": {
       "files": 6,
-      "physical": 727,
-      "code": 545
+      "physical": 738,
+      "code": 552
     },
     "maintenance_scripts": {
       "files": 2,
@@ -51,8 +51,8 @@
     },
     "src/meridian/cli.py": {
       "group": "application",
-      "physical": 65,
-      "code": 56
+      "physical": 68,
+      "code": 59
     },
     "src/meridian/demand.py": {
       "group": "application",
@@ -76,8 +76,8 @@
     },
     "src/meridian/planning.py": {
       "group": "application",
-      "physical": 118,
-      "code": 93
+      "physical": 130,
+      "code": 101
     },
     "src/meridian/reporting.py": {
       "group": "application",
@@ -191,8 +191,8 @@
     },
     "tests/meridian/test_planning.py": {
       "group": "application_tests",
-      "physical": 173,
-      "code": 128
+      "physical": 184,
+      "code": 135
     },
     "tests/meridian/test_reporting_cli.py": {
       "group": "application_tests",

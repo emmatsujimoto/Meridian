@@ -1,5 +1,6 @@
 """Policy comparison and separate deterministic replenishment benchmarks."""
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from math import ceil, sqrt
 from statistics import fmean
 
@@ -64,13 +65,24 @@ def optimize_lane(lane: Lane, settings: Settings) -> LaneResult:
     )
 
 
-def run_scenario(lanes: tuple[Lane, ...], settings: Settings) -> RunResult:
+def run_scenario(lanes: tuple[Lane, ...], settings: Settings, workers: int = 1) -> RunResult:
+    """Optimize every lane; with workers > 1, lanes are optimized in parallel threads.
+
+    Results are the same as a serial run, so reports do not depend on the worker count.
+    """
     if not lanes or len(lanes) > 100:
         raise InputError("A scenario needs 1-100 product-location rows")
     if len({lane.key for lane in lanes}) != len(lanes):
         raise InputError("Duplicate product-location rows")
+    if workers < 1:
+        raise InputError("workers must be at least 1")
     lanes = tuple(sorted(lanes, key=lambda x: x.key))
-    return RunResult(settings, lanes, tuple(optimize_lane(lane, settings) for lane in lanes))
+    if workers == 1:
+        return RunResult(settings, lanes, tuple(optimize_lane(lane, settings) for lane in lanes))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = [pool.submit(optimize_lane, lane, settings) for lane in lanes]
+        results = tuple(future.result() for future in as_completed(futures))
+    return RunResult(settings, lanes, results)
 
 
 def eoq_benchmark(lane: Lane, multiplier: float = 1.0) -> dict:

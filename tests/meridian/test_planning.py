@@ -171,3 +171,14 @@ def test_duplicate_or_empty_scenarios(lane, settings):
     for lanes in ((), (lane, lane)):
         with pytest.raises(InputError):
             run_scenario(lanes, settings)
+
+
+def test_parallel_run_matches_serial(lane, settings):
+    serial = run_scenario((lane,), settings)
+    parallel = run_scenario((lane,), settings, workers=4)
+    assert parallel.results == serial.results
+
+
+def test_workers_must_be_positive(lane, settings):
+    with pytest.raises(InputError):
+        run_scenario((lane,), settings, workers=0)

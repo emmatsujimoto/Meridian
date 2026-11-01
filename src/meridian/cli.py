@@ -8,6 +8,14 @@ from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
+from meridian.transfers import (
+    DISTANCES_KM,
+    load_distances,
+    suggest_transfers,
+    transfer_summary,
+    write_transfer_report,
+    write_transfers,
+)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -25,6 +33,10 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
             )
+            command.add_argument(
+                "--transfers", action="store_true", help="Also suggest transfers between sites"
+            )
+            command.add_argument("--distances", help="Site-pair distance file for transfers")
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
     return root
@@ -55,6 +67,12 @@ def main(argv: list[str] | None = None) -> int:
             result = run_scenario(lanes, settings)
             destination = export_run(result, args.output)
             print(f"Results saved to {destination}")
+            if args.transfers:
+                distances = load_distances(args.distances) if args.distances else DISTANCES_KM
+                transfers = suggest_transfers(result, distances)
+                write_transfers(transfers, destination)
+                write_transfer_report(transfers, destination)
+                print(f"Transfers: {transfer_summary(transfers)}")
         return 0
     except (InputError, OSError) as exc:
         print(f"Input/output error: {exc}", file=sys.stderr)

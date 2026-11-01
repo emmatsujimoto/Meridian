@@ -55,6 +55,9 @@ python -m meridian benchmark --data data/synthetic_sites.csv --config config/qui
 python -m meridian compare results/<run-one>/summary.json results/<run-two>/summary.json
 ```
 
+Add `--transfers` to `run` to suggest moving surplus stock between sites of the same
+product (`transfers.csv` and `transfers.md` in the bundle). See [docs/transfers.md](docs/transfers.md).
+
 The `benchmark` command provides EOQ and Wagner-Whitin calculations. They have
 different assumptions from the stochastic simulation and are labeled separately.
 
@@ -68,6 +71,7 @@ different assumptions from the stochastic simulation and are labeled separately.
 | `src/meridian/engine.py` | Adapter to the Stockpyl inventory simulator |
 | `src/meridian/planning.py` | Candidate selection, EOQ and deterministic lot-sizing benchmarks |
 | `src/meridian/reporting.py` | Cost summaries, CSV/JSON exports and scenario comparison |
+| `src/meridian/transfers.py` | Suggested stock transfers between sites |
 | `src/meridian/cli.py` | Local command-line interface |
 | `src/stockpyl/` | Selected upstream inventory algorithms and their required network objects |
 | `data/` | Six fictional product-location input rows |

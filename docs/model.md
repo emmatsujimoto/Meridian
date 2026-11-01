@@ -21,8 +21,11 @@ USD is the common currency and kg is the common quantity unit.
   Stockpyl's documented event order. Zero shipment lead time means same-day arrival.
 - Demand is nonnegative lognormal with configured arithmetic mean and standard deviation.
   A zero standard deviation gives deterministic demand.
-- Day-to-day demand and product-location streams are independent. Seasonality,
-  shared disruptions and cross-location demand correlation are not modeled.
+- Day-to-day demand and product-location streams are independent. Shared disruptions
+  and cross-location demand correlation are not modeled.
+- An optional `seasonal_profile` of 12 monthly factors scales demand by calendar month
+  (January to December). Factors are rescaled to average 1, so annual demand is unchanged
+  and only its timing moves. Demand variability scales with the monthly level.
 - The chosen policy orders to restore the configured inventory position. This is
   not a truck-routing optimizer and does not combine product shipments.
 - Unserved demand remains backlogged. The backlog penalty is charged per kg per day.

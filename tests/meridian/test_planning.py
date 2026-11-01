@@ -171,3 +171,17 @@ def test_duplicate_or_empty_scenarios(lane, settings):
     for lanes in ((), (lane, lane)):
         with pytest.raises(InputError):
             run_scenario(lanes, settings)
+
+
+def test_seasonal_profile_shifts_demand(lane, settings):
+    flat = replace(settings, horizon_days=60, replications=50)
+    profile = (1.2,) * 6 + (0.8,) * 6
+    seasonal = replace(flat, seasonal_profile=profile)
+    traces = np.array(demand_traces(lane, seasonal, "training"))
+    base = np.array(demand_traces(lane, flat, "training"))
+    assert traces[:, :30].mean() > base[:, :30].mean()
+
+
+def test_seasonal_profile_needs_twelve_months(settings):
+    with pytest.raises(InputError, match="12 monthly"):
+        replace(settings, seasonal_profile=(1.0, 1.0))

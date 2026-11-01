@@ -1,6 +1,9 @@
 """Policy comparison and separate deterministic replenishment benchmarks."""
 
+import pickle
+import tempfile
 from math import ceil, sqrt
+from pathlib import Path
 from statistics import fmean
 
 from meridian.demand import demand_traces
@@ -43,7 +46,25 @@ def choose_candidate(candidates: tuple[Candidate, ...]) -> Candidate:
     return min(candidates, key=lambda c: (-c.mean_fill_rate, c.mean_cost, c.base_stock_kg))
 
 
-def optimize_lane(lane: Lane, settings: Settings) -> LaneResult:
+CACHE_DIR = Path(tempfile.gettempdir()) / "meridian-cache"
+
+
+def _cache_path(lane: Lane, settings: Settings) -> Path:
+    """Cache file for one lane's training candidates under one scenario's settings."""
+    key = hash((lane.key, repr(lane), repr(settings)))
+    return CACHE_DIR / f"{key}.pkl"
+
+
+def training_candidates(lane: Lane, settings: Settings) -> tuple[Candidate, ...]:
+    """Evaluate every candidate level on the training samples.
+
+    Results are saved to disk and reused by later runs with identical inputs, so repeated
+    runs of the same scenario skip the training simulations.
+    """
+    path = _cache_path(lane, settings)
+    if path.exists():
+        with path.open("rb") as stream:
+            return pickle.load(stream)
     training = demand_traces(lane, settings, "training")
     candidates = []
     for level in candidate_levels(lane, settings):
@@ -54,7 +75,15 @@ def optimize_lane(lane: Lane, settings: Settings) -> LaneResult:
                 level, fmean(t.total_cost for t in trials), fill, fill >= settings.service_target
             )
         )
-    chosen = choose_candidate(tuple(candidates))
+    CACHE_DIR.mkdir(exist_ok=True)
+    with path.open("wb") as stream:
+        pickle.dump(tuple(candidates), stream)
+    return tuple(candidates)
+
+
+def optimize_lane(lane: Lane, settings: Settings) -> LaneResult:
+    candidates = training_candidates(lane, settings)
+    chosen = choose_candidate(candidates)
     validation = tuple(
         simulate_lane(lane, chosen.base_stock_kg, trace)
         for trace in demand_traces(lane, settings, "validation")

@@ -1,7 +1,7 @@
 """Policy comparison and separate deterministic replenishment benchmarks."""
 
 from math import ceil, sqrt
-from statistics import fmean
+from statistics import NormalDist, fmean
 
 from meridian.demand import demand_traces
 from meridian.engine import simulate_lane
@@ -92,6 +92,25 @@ def eoq_benchmark(lane: Lane, multiplier: float = 1.0) -> dict:
         "quantity_kg": float(quantity),
         "daily_cycle_cost": float(cost),
         "interpretation": "Steady-demand benchmark; excludes procurement, shortages and lead time",
+    }
+
+
+def reorder_point(lane: Lane, settings: Settings) -> dict:
+    """Classic reorder point: lead-time demand plus safety stock for the service target.
+
+    Safety stock = z x daily SD x sqrt(lead time), with z taken from the standard normal
+    distribution at the scenario's service target.
+    """
+    lead = lane.lead_time_days
+    z = NormalDist().inv_cdf(1 - settings.service_target)
+    mean = lane.daily_mean_kg * settings.demand_multiplier
+    sd = lane.daily_sd_kg * settings.demand_multiplier
+    safety = z * sd * lead
+    return {
+        "lane": lane.key,
+        "safety_stock_kg": safety,
+        "reorder_point_kg": mean * lead + safety,
+        "interpretation": "Normal-demand reorder point; compare with the simulated base stock",
     }
 
 

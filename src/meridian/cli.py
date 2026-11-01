@@ -6,7 +6,7 @@ import sys
 
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
-from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
+from meridian.planning import deterministic_plan, eoq_benchmark, reorder_point, run_scenario
 from meridian.reporting import compare_reports, export_run
 
 
@@ -48,6 +48,7 @@ def main(argv: list[str] | None = None) -> int:
                     {
                         "eoq": eoq_benchmark(lane, settings.demand_multiplier),
                         "deterministic": deterministic_plan(lane, demands),
+                        "reorder": reorder_point(lane, settings),
                     }
                 )
             print(json.dumps(rows, indent=2, allow_nan=False))

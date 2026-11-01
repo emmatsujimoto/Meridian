@@ -171,3 +171,11 @@ def test_duplicate_or_empty_scenarios(lane, settings):
     for lanes in ((), (lane, lane)):
         with pytest.raises(InputError):
             run_scenario(lanes, settings)
+
+
+def test_reorder_point_covers_lead_time_demand(lane, settings):
+    from meridian.planning import reorder_point
+
+    result = reorder_point(lane, settings)
+    assert result["lane"] == lane.key
+    assert result["reorder_point_kg"] > 0

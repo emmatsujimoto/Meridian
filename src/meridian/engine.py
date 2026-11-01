@@ -47,23 +47,26 @@ def simulate_lane(lane: Lane, base_stock_kg: float, demands: tuple[float, ...]) 
             np.random.set_state(state)
     node = network.nodes[0]
     product = node.product_indices[0]
-    periods = []
-    for day, demand in enumerate(demands):
-        sv = node.state_vars[day]
-        inventory = float(sv.inventory_level[product])
-        ordered = float(sv.order_quantity_fg[product])
-        periods.append(
-            PeriodResult(
-                day=day + 1,
-                demand_kg=demand,
-                inventory_kg=max(0.0, inventory),
-                backlog_kg=max(0.0, -inventory),
-                ordered_kg=ordered,
-                served_immediately_kg=float(sv.demand_met_from_stock[product]),
-                holding_cost=float(sv.holding_cost_incurred),
-                backlog_cost=float(sv.stockout_cost_incurred),
-                delivery_cost=lane.delivery_cost_per_order if ordered > 1e-9 else 0.0,
-                purchase_cost=ordered * lane.purchase_cost_per_kg,
-            )
-        )
-    return Trial(lane.key, base_stock_kg, tuple(periods))
+    periods = tuple(
+        _period_row(lane, node.state_vars[day], product, day + 1, demand)
+        for day, demand in enumerate(demands)
+    )
+    return Trial(lane.key, base_stock_kg, periods)
+
+
+def _period_row(lane: Lane, sv, product, day: int, demand: float) -> PeriodResult:
+    """Convert one day of simulator state into a PeriodResult (kg and USD)."""
+    inventory = float(sv.inventory_level[product])
+    ordered = float(sv.order_quantity_fg[product])
+    return PeriodResult(
+        day=day,
+        demand_kg=demand,
+        inventory_kg=max(0.0, inventory),
+        backlog_kg=max(0.0, -inventory),
+        ordered_kg=ordered,
+        served_immediately_kg=float(sv.demand_met_from_stock[product]),
+        holding_cost=float(sv.holding_cost_incurred),
+        backlog_cost=float(sv.stockout_cost_incurred),
+        delivery_cost=lane.delivery_cost_per_order if ordered > 1e-9 else 0.0,
+        purchase_cost=ordered * lane.purchase_cost_per_kg,
+    )

@@ -34,6 +34,7 @@ not cylinder counts or standard gas volumes; no density conversion is performed.
 | demand_multiplier | 1.0 | Positive multiplier applied to both demand mean and SD |
 | service_target | 0.95 | Mean fraction served immediately, >0 and <=1 |
 | stock_multipliers | 0.75, 1, 1.25, 1.5 | Distinct positive candidate multipliers, 1–20 values |
+| description | empty | Short note shown under the report title: letters, digits, spaces and , . - (up to 200 characters) |
 
 Unknown and duplicate JSON keys are rejected. Configurations are data, never executable code.
 

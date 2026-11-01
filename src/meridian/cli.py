@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 
+from meridian.forecast import estimate_all, format_estimates, read_history, update_inputs
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
@@ -25,6 +26,12 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
             )
+    forecast = commands.add_parser("forecast", help="Estimate demand from a daily history CSV")
+    forecast.add_argument("--data", required=True, help="Product-location CSV")
+    forecast.add_argument("--history", required=True, help="Daily demand history CSV")
+    forecast.add_argument(
+        "--apply", action="store_true", help="Write the estimates into the --data CSV"
+    )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
     return root
@@ -33,6 +40,13 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "forecast":
+            if args.apply:
+                estimates = update_inputs(args.data, args.history)
+            else:
+                estimates = estimate_all(read_history(args.history))
+            print(format_estimates(estimates))
+            return 0
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
             return 0

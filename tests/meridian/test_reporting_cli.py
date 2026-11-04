@@ -97,7 +97,9 @@ def test_cli_validate_example(capsys):
         )
         == 0
     )
-    assert "6 product-location rows" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "6 product-location rows" in out
+    assert "service target 95.0%" in out
 
 
 def test_cli_run_example(tmp_path, capsys):

@@ -14,7 +14,10 @@ def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description="Synthetic industrial-gas inventory planning")
     commands = root.add_subparsers(dest="command", required=True)
     for name, help_text in (
-        ("validate", "Validate input files without running models"),
+        (
+            "validate",
+            "Validate input files without running models; shows the service target as a fraction",
+        ),
         ("run", "Compare policies and export independent validation results"),
         ("benchmark", "Calculate EOQ and deterministic lot-sizing benchmarks"),
     ):
@@ -39,7 +42,10 @@ def main(argv: list[str] | None = None) -> int:
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)
         if args.command == "validate":
-            print(f"Valid: {len(lanes)} product-location rows; scenario={settings.scenario_id}")
+            print(
+                f"Valid: {len(lanes)} product-location rows; scenario={settings.scenario_id}; "
+                f"service target {settings.service_target:.1%}"
+            )
         elif args.command == "benchmark":
             rows = []
             for lane in lanes:

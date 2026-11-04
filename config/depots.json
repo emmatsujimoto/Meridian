@@ -1,0 +1,18 @@
+{
+  "depots": [
+    {
+      "depot_id": "GulfDepot",
+      "lead_time_days": 3,
+      "holding_cost_per_kg_day": 0.006,
+      "initial_inventory_kg": 2500,
+      "sites": ["Harbor", "Summit"]
+    },
+    {
+      "depot_id": "PlainsDepot",
+      "lead_time_hours": 36,
+      "holding_cost_per_kg_day": 0.006,
+      "initial_inventory_kg": 900,
+      "sites": ["Meadow"]
+    }
+  ]
+}

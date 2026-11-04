@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meridian.example/schema/settings/2026-10",
+  "title": "Meridian scenario settings",
+  "description": "Scenario file accepted by meridian run, validate and benchmark. Every field is optional; omitted fields use the documented defaults.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "description": "Settings schema version. Omit it, or give the current version.",
+      "type": "string"
+    },
+    "scenario_id": {
+      "description": "Portable identifier used in result folder names.",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    },
+    "horizon_days": {
+      "description": "Simulated days per replication.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 366
+    },
+    "replications": {
+      "description": "Independent demand traces per phase.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    },
+    "seed": {
+      "description": "Seed for reproducible demand traces.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "demand_multiplier": {
+      "description": "Positive multiplier applied to demand mean and standard deviation.",
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "service_target": {
+      "description": "Immediate fill-rate target, as a fraction.",
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1
+    },
+    "stock_multipliers": {
+      "description": "Distinct positive multipliers that build the base-stock candidate grid.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": {
+        "type": "number",
+        "exclusiveMinimum": 0
+      }
+    }
+  }
+}

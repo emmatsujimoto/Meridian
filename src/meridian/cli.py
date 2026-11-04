@@ -10,8 +10,14 @@ from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
 
 
+def _paint(text: str, colour_code: str, stream, enabled: bool) -> str:
+    """Wrap text in an ANSI colour code only when colour is enabled and stream is a terminal."""
+    return f"\033[{colour_code}m{text}\033[0m" if enabled and stream.isatty() else text
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description="Synthetic industrial-gas inventory planning")
+    root.add_argument("--no-color", action="store_true", help="Plain output without ANSI colours")
     commands = root.add_subparsers(dest="command", required=True)
     for name, help_text in (
         ("validate", "Validate input files without running models"),
@@ -57,7 +63,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Results saved to {destination}")
         return 0
     except (InputError, OSError) as exc:
-        print(f"Input/output error: {exc}", file=sys.stderr)
+        message = _paint(f"Input/output error: {exc}", "31", sys.stderr, not args.no_color)
+        print(message, file=sys.stderr)
         return 2
 
 

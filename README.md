@@ -45,6 +45,21 @@ python -m pytest
 Every run prints a unique result folder. Open its `report.md` for the concise
 summary, or `summary.json` for the complete settings and structured results.
 `COMPLETE.json` confirms all outputs were written and records their hashes.
+
+`orders.csv` lists every replenishment order placed in the validation trials, so
+planners can check delivery frequency and order sizes behind each lane's cost. The file
+always has a header row, even when no lane placed an order.
+
+| Column | Meaning |
+|---|---|
+| `lane` | Product-location key, `site:product` |
+| `replication` | Validation trial number, starting at 1 |
+| `order_day` | Day the order was placed (day 1 is the first simulated day) |
+| `quantity_kg` | Ordered quantity in kg |
+| `arrival_day` | `order_day` plus the lane's lead time; zero lead time arrives the same day |
+| `arrives_within_horizon` | `False` when the order arrives after the last simulated day |
+| `delivery_cost` | Fixed delivery cost charged for the order (USD) |
+| `purchase_cost` | Variable purchase cost of the order (USD) |
 The result folders are ignored by Git, so rerunning the tool does not change source files.
 
 For the full example, use `config/baseline.json`. To study a hypothetical 25% demand

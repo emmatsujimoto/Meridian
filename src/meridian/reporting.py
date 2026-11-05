@@ -5,6 +5,7 @@ import hashlib
 import json
 import platform
 from dataclasses import asdict
+from datetime import date as date
 from datetime import datetime, timezone
 from importlib.metadata import version
 from pathlib import Path
@@ -83,6 +84,49 @@ def _write_csv(path: Path, rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
+def order_events(result: RunResult) -> list[dict]:
+    """One row per replenishment order placed during the validation trials.
+
+    The arrival day follows the simulator's convention: an order placed on day d with a
+    lead time of L days arrives on day d + L, so a zero lead time means same-day arrival.
+    Orders arriving after the horizon are listed and flagged, because they are still charged.
+    """
+    lead_times = {lane.key: lane.lead_time_days for lane in result.lanes}
+    horizon = result.settings.horizon_days
+    rows = []
+    for lane_result in result.results:
+        lead_time_days = lead_times[lane_result.lane_key]
+        for replication, trial in enumerate(lane_result.validation_trials, 1):
+            for period in trial.periods:
+                if period.ordered_kg <= 1e-9:
+                    continue
+                arrival_day = period.day + lead_time_days
+                rows.append(
+                    {
+                        "lane": lane_result.lane_key,
+                        "replication": replication,
+                        "order_day": period.day,
+                        "quantity_kg": period.ordered_kg,
+                        "arrival_day": arrival_day,
+                        "arrives_within_horizon": arrival_day <= horizon,
+                        "delivery_cost": period.delivery_cost,
+                        "purchase_cost": period.purchase_cost,
+                    }
+                )
+    return rows
+
+
+def _write_orders(path: Path, rows: list[dict]) -> None:
+    """Write order events as CSV, one line per order."""
+    with path.open("w", newline="", encoding="utf-8") as stream:
+        writer = None
+        for row in rows:
+            if writer is None:
+                writer = csv.DictWriter(stream, fieldnames=list(row))
+                writer.writeheader()
+            writer.writerow(row)
+
+
 def export_run(result: RunResult, output_root: str | Path) -> Path:
     """Create a unique bundle. COMPLETE.json is written only after all exports succeed."""
     root = Path(output_root).resolve()
@@ -112,6 +156,7 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
                 )
     _write_csv(destination / "candidates.csv", candidates)
     _write_csv(destination / "daily_results.csv", traces)
+    _write_orders(destination / "orders.csv", order_events(result))
     lines = [
         f"# Scenario: {result.settings.scenario_id}",
         "",
@@ -139,6 +184,7 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
             for name in ("numpy", "scipy", "networkx", "jsonpickle", "tabulate", "tqdm")
         },
         "input_sha256": report["input_sha256"],
+        "order_events_file": "orders.csv",
         "files": {
             p.name: hashlib.sha256(p.read_bytes()).hexdigest()
             for p in sorted(destination.iterdir())

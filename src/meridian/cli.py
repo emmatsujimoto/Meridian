@@ -3,11 +3,15 @@
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
+
+# Bundles go to ./results under the current folder unless --output is given.
+DEFAULT_OUTPUT = Path("results")
 
 
 def parser() -> argparse.ArgumentParser:
@@ -23,7 +27,10 @@ def parser() -> argparse.ArgumentParser:
         command.add_argument("--config", required=True, help="Scenario JSON")
         if name == "run":
             command.add_argument(
-                "--output", default="results", help="Parent folder for unique result bundles"
+                "--output",
+                type=Path,
+                default=DEFAULT_OUTPUT,
+                help="Parent folder for unique result bundles (default: ./output)",
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")

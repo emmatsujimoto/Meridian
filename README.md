@@ -58,6 +58,18 @@ python -m meridian compare results/<run-one>/summary.json results/<run-two>/summ
 The `benchmark` command provides EOQ and Wagner-Whitin calculations. They have
 different assumptions from the stochastic simulation and are labeled separately.
 
+## Sharing results as a PDF
+
+`meridian pdf-report` writes a single PDF that compares several completed runs, with a
+comparison page, cost charts and a lane table for each scenario:
+
+```bash
+python -m meridian pdf-report results/<run-one>/summary.json results/<run-two>/summary.json \
+  --output review.pdf --title "Scenario review"
+```
+
+The PDF is generated without extra dependencies. See [docs/pdf_report.md](docs/pdf_report.md).
+
 ## Repository map
 
 | Location | Contents |
@@ -68,6 +80,8 @@ different assumptions from the stochastic simulation and are labeled separately.
 | `src/meridian/engine.py` | Adapter to the Stockpyl inventory simulator |
 | `src/meridian/planning.py` | Candidate selection, EOQ and deterministic lot-sizing benchmarks |
 | `src/meridian/reporting.py` | Cost summaries, CSV/JSON exports and scenario comparison |
+| `src/meridian/pdf_report.py` | Multi-scenario PDF report |
+| `src/meridian/pdf.py` | Minimal PDF writer used by the report |
 | `src/meridian/cli.py` | Local command-line interface |
 | `src/stockpyl/` | Selected upstream inventory algorithms and their required network objects |
 | `data/` | Six fictional product-location input rows |

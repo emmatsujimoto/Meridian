@@ -7,6 +7,7 @@ import sys
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
+from meridian.policies import compare_policies, policy_summary, policy_warnings
 from meridian.reporting import compare_reports, export_run
 
 
@@ -17,6 +18,7 @@ def parser() -> argparse.ArgumentParser:
         ("validate", "Validate input files without running models"),
         ("run", "Compare policies and export independent validation results"),
         ("benchmark", "Calculate EOQ and deterministic lot-sizing benchmarks"),
+        ("policies", "Show safety stock per lane and compare safety-stock policies"),
     ):
         command = commands.add_parser(name, help=help_text)
         command.add_argument("--data", required=True, help="Synthetic product-location CSV")
@@ -51,6 +53,19 @@ def main(argv: list[str] | None = None) -> int:
                     }
                 )
             print(json.dumps(rows, indent=2, allow_nan=False))
+        elif args.command == "policies":
+            for warning in policy_warnings(settings):
+                print(f"Note: {warning}", file=sys.stderr)
+            for row in policy_summary(lanes, settings):
+                print(
+                    f"{row['lane']}: lead-time demand {row['lead_time_demand_kg']:,.0f} kg, "
+                    f"safety stock {row['safety_stock_kg']:,.0f} kg ({row['policy']})"
+                )
+            for row in compare_policies(lanes, settings):
+                print(
+                    f"{row['policy']}: cost ${row['mean_total_cost']:,.0f}, fill rate "
+                    f"{row['fill_rate']:.2%}, {row['lanes_meeting_target']} lanes meet the target"
+                )
         else:
             result = run_scenario(lanes, settings)
             destination = export_run(result, args.output)

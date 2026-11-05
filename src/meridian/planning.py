@@ -6,6 +6,7 @@ from statistics import fmean
 from meridian.demand import demand_traces
 from meridian.engine import simulate_lane
 from meridian.models import Candidate, InputError, Lane, LaneResult, RunResult, Settings, number
+from meridian.policies import fixed_safety_stock, percentage_safety_stock
 from stockpyl.eoq import economic_order_quantity
 from stockpyl.newsvendor import newsvendor_normal
 from stockpyl.wagner_whitin import wagner_whitin
@@ -20,7 +21,13 @@ def candidate_levels(lane: Lane, settings: Settings) -> tuple[float, ...]:
     protection = max(1, lane.lead_time_days + 1)
     mean = lane.daily_mean_kg * settings.demand_multiplier * protection
     sd = lane.daily_sd_kg * settings.demand_multiplier * sqrt(protection)
-    if sd:
+    if settings.safety_stock_policy == "fixed":
+        center = mean + fixed_safety_stock(lane, settings)
+    elif settings.safety_stock_policy == "percentage":
+        center = mean + percentage_safety_stock(lane, settings)
+    elif settings.safety_stock_policy != "statistical":
+        raise InputError(f"Unknown safety_stock_policy {settings.safety_stock_policy!r}")
+    elif sd:
         center, _ = newsvendor_normal(
             lane.holding_cost_per_kg_day,
             lane.backlog_cost_per_kg_day,

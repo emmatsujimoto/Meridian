@@ -118,10 +118,10 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
         "Meridian Industrial Gases — fictional internal planning study.",
         "",
         f"Horizon: {result.settings.horizon_days} days. Replications: {result.settings.replications}.",
-        f"Mean total cost: ${report['total_mean_cost']:,.2f}.",
+        f"Mean total cost (USD): ${report['total_mean_cost']:,.2f}.",
         f"Volume-weighted immediate fill rate: {report['portfolio_fill_rate']:.2%}.",
         "",
-        "| Product-location | Base stock (kg) | Mean cost (USD) | Mean fill rate | Target met on validation |",
+        "| Product-location | Base stock (kg) | Mean cost (USD) | Mean fill rate (%) | Target met in validation |",
         "|---|---:|---:|---:|---|",
     ]
     for row in report["lanes"]:

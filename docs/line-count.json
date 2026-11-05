@@ -2,15 +2,15 @@
   "method": "Python token-bearing physical lines excluding docstrings, comments and blanks",
   "target_code_lines": 8500,
   "totals": {
-    "files": 41,
-    "physical": 20825,
-    "code": 8500
+    "files": 43,
+    "physical": 21571,
+    "code": 9042
   },
   "groups": {
     "application": {
-      "files": 10,
-      "physical": 802,
-      "code": 664
+      "files": 11,
+      "physical": 1168,
+      "code": 933
     },
     "upstream_source": {
       "files": 16,
@@ -23,9 +23,9 @@
       "code": 2897
     },
     "application_tests": {
-      "files": 6,
-      "physical": 727,
-      "code": 545
+      "files": 7,
+      "physical": 1107,
+      "code": 818
     },
     "maintenance_scripts": {
       "files": 2,
@@ -61,28 +61,33 @@
     },
     "src/meridian/engine.py": {
       "group": "application",
-      "physical": 69,
-      "code": 53
+      "physical": 141,
+      "code": 108
     },
     "src/meridian/inputs.py": {
       "group": "application",
       "physical": 65,
       "code": 56
     },
+    "src/meridian/leadtime.py": {
+      "group": "application",
+      "physical": 192,
+      "code": 131
+    },
     "src/meridian/models.py": {
       "group": "application",
-      "physical": 177,
-      "code": 139
+      "physical": 185,
+      "code": 146
     },
     "src/meridian/planning.py": {
       "group": "application",
-      "physical": 118,
-      "code": 93
+      "physical": 169,
+      "code": 132
     },
     "src/meridian/reporting.py": {
       "group": "application",
-      "physical": 183,
-      "code": 169
+      "physical": 226,
+      "code": 206
     },
     "src/stockpyl/__init__.py": {
       "group": "upstream_source",
@@ -183,6 +188,11 @@
       "group": "application_tests",
       "physical": 132,
       "code": 98
+    },
+    "tests/meridian/test_leadtime.py": {
+      "group": "application_tests",
+      "physical": 380,
+      "code": 273
     },
     "tests/meridian/test_models_inputs.py": {
       "group": "application_tests",

@@ -44,6 +44,13 @@ def summary(result: RunResult) -> dict:
                 "mean_terminal_backlog_kg": fmean(t.periods[-1].backlog_kg for t in trials),
             }
         )
+        if lane_result.reorder_point_kg is not None:
+            rows[-1]["policy"] = "periodic-review"
+            rows[-1]["reorder_point_kg"] = lane_result.reorder_point_kg
+            rows[-1]["review_period_days"] = result.settings.review_period_days
+            rows[-1]["mean_orders"] = fmean(
+                sum(p.ordered_kg > 0 for p in t.periods) for t in trials
+            )
     periods = [p for lr in result.results for t in lr.validation_trials for p in t.periods]
     total_demand = sum(p.demand_kg for p in periods)
     service = sum(p.served_immediately_kg for p in periods) / total_demand if total_demand else 1.0
@@ -83,6 +90,17 @@ def _write_csv(path: Path, rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
+def _policy_line(settings) -> str:
+    """One report.md line naming the replenishment policy used."""
+    if settings.policy == "periodic-review":
+        pack = f", pack size {settings.pack_size_kg:,.0f} kg" if settings.pack_size_kg else ""
+        return (
+            f"Policy: periodic review every {settings.review_period_days} days "
+            f"(order up to S when position is at or below s{pack})."
+        )
+    return "Policy: daily base-stock review."
+
+
 def export_run(result: RunResult, output_root: str | Path) -> Path:
     """Create a unique bundle. COMPLETE.json is written only after all exports succeed."""
     root = Path(output_root).resolve()
@@ -120,13 +138,17 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
         f"Horizon: {result.settings.horizon_days} days. Replications: {result.settings.replications}.",
         f"Mean total cost: ${report['total_mean_cost']:,.2f}.",
         f"Volume-weighted immediate fill rate: {report['portfolio_fill_rate']:.2%}.",
+        _policy_line(result.settings),
         "",
         "| Product-location | Base stock (kg) | Mean cost (USD) | Mean fill rate | Target met on validation |",
         "|---|---:|---:|---:|---|",
     ]
     for row in report["lanes"]:
+        level = f"{row['base_stock_kg']:,.0f}"
+        if "reorder_point_kg" in row:
+            level = f"s={row['reorder_point_kg']:,.0f}, S={level}"
         lines.append(
-            f"| {row['lane']} | {row['base_stock_kg']:,.0f} | {row['validation_mean_cost']:,.2f} | {row['validation_mean_fill_rate']:.2%} | {row['validation_target_met']} |"
+            f"| {row['lane']} | {level} | {row['validation_mean_cost']:,.2f} | {row['validation_mean_fill_rate']:.2%} | {row['validation_target_met']} |"
         )
     lines.extend(["", *[f"- {note}" for note in report["model_notes"]], ""])
     (destination / "report.md").write_text("\n".join(lines), encoding="utf-8")

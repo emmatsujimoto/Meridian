@@ -9,6 +9,9 @@ class InputError(ValueError):
     """An input violates the documented application contract."""
 
 
+POLICIES = ("base-stock", "periodic-review")
+
+
 def identifier(value: str, field: str) -> str:
     """Accept portable identifiers, not paths, expressions, or spreadsheet formulas."""
     if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,63}", value):
@@ -90,9 +93,32 @@ class Settings:
     demand_multiplier: float = 1.0
     service_target: float = 0.95
     stock_multipliers: tuple[float, ...] = (0.75, 1.0, 1.25, 1.5)
+    policy: str = "base-stock"
+    review_period_days: int = 7
+    pack_size_kg: float = 0.0
+    reorder_fractions: tuple[float, ...] = (0.6, 0.8, 1.0)
 
     def __post_init__(self):
         identifier(self.scenario_id, "scenario_id")
+        if self.policy not in POLICIES:
+            raise InputError(f"policy must be one of {', '.join(POLICIES)}")
+        object.__setattr__(
+            self,
+            "review_period_days",
+            integer(self.review_period_days, "review_period_days", 1, 90),
+        )
+        object.__setattr__(self, "pack_size_kg", number(self.pack_size_kg, "pack_size_kg"))
+        if (
+            not isinstance(self.reorder_fractions, (tuple, list))
+            or not 1 <= len(self.reorder_fractions) <= 10
+        ):
+            raise InputError("reorder_fractions must contain 1-10 numbers")
+        fractions = tuple(
+            number(x, "reorder_fraction", strict=True) for x in self.reorder_fractions
+        )
+        if any(x > 1 for x in fractions) or len(set(fractions)) != len(fractions):
+            raise InputError("reorder_fractions must be distinct and at most 1")
+        object.__setattr__(self, "reorder_fractions", tuple(sorted(fractions)))
         for field, lower, upper in (
             ("horizon_days", 1, 366),
             ("replications", 1, 100),
@@ -159,6 +185,7 @@ class Candidate:
     mean_cost: float
     mean_fill_rate: float
     meets_target: bool
+    reorder_point_kg: float | None = None
 
 
 @dataclass(frozen=True)
@@ -168,6 +195,7 @@ class LaneResult:
     training_target_met: bool
     candidates: tuple[Candidate, ...]
     validation_trials: tuple[Trial, ...]
+    reorder_point_kg: float | None = None
 
 
 @dataclass(frozen=True)

@@ -8,6 +8,7 @@ from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
+from meridian.xlsx_export import export_workbook
 
 
 def parser() -> argparse.ArgumentParser:
@@ -27,6 +28,13 @@ def parser() -> argparse.ArgumentParser:
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
+    export = commands.add_parser("export", help="Export a completed bundle to another format")
+    export.add_argument("report", help="The bundle's summary.json")
+    export.add_argument(
+        "--xlsx", action="store_true", required=True, help="Write an Excel workbook (needs [xlsx])"
+    )
+    export.add_argument("--output", help="Workbook path (default: <bundle folder>.xlsx beside it)")
+    export.add_argument("--daily", action="store_true", help="Include daily results (large)")
     return root
 
 
@@ -35,6 +43,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
+            return 0
+        if args.command == "export":
+            path = export_workbook(args.report, args.output, include_daily=args.daily)
+            print(f"Workbook saved to {path}")
             return 0
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)

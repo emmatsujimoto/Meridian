@@ -33,6 +33,101 @@ USD is the common currency and kg is the common quantity unit.
   sunk asset, and no terminal inventory salvage value is credited.
 - Ending inventory and backlog are reported so boundary effects remain visible.
 
+## Site storage capacity
+
+Each product-location may record the most product its site can store, in the optional
+`storage_capacity_kg` column of the lane CSV. The column can be left out entirely, and a
+blank cell means the capacity is not recorded for that row. A recorded capacity must be
+positive, and the starting inventory must fit within it.
+
+Capacity is only applied when the scenario JSON sets `"enforce_capacity": true`. Without
+that setting, recorded capacities are ignored and results are identical to earlier
+versions, so existing scenarios do not change.
+
+When capacity is enforced:
+
+- A delivery that would take end-of-day storage above capacity is only partly received.
+  The remainder stays at the supplier until space is available, as described in the
+  scenario request.
+- Orders are still placed to restore the base-stock inventory position. Purchase and
+  delivery costs are charged when an order is placed, as in uncapped runs.
+- Holding cost applies only to product received at the site.
+- Demand is served from stock on hand after the day's deliveries. Unserved demand is
+  backlogged as usual.
+- Backlogged demand does not occupy storage, so deliveries that clear a backlog are not
+  limited by capacity.
+
+Stockpyl's base-stock simulator has no storage limit. Capacity runs therefore use a daily
+loop in `meridian.engine` that follows the same event order (observe demand, place the
+order, receive due deliveries, serve demand, charge end-of-day costs). With capacity well
+above any inventory level the loop reproduces the Stockpyl results exactly; the tests check
+this for several lead times and base-stock levels.
+
+Choosing a base-stock level above a site's capacity is allowed. The candidate grid is not
+trimmed to capacity, because the simulation shows the effect of such a level directly:
+the site fills up and the excess waits at the supplier.
+
+`meridian.engine.capacity_utilisation` reports a trial's peak end-of-day inventory as a
+share of the site's capacity. Values close to one mean the site was full at some point
+during the horizon and a larger tank or more frequent, smaller deliveries may be worth
+studying.
+
+### Capacity reporting
+
+`meridian.planning.capacity_report(result)` summarises storage use for every lane with a
+recorded capacity, using the chosen policy's validation trials:
+
+| Field | Meaning |
+|---|---|
+| `storage_capacity_kg` | The site's recorded capacity |
+| `base_stock_kg` | Chosen base-stock level |
+| `base_stock_above_capacity` | The chosen level is larger than the site can hold |
+| `mean_peak_utilisation` | Peak end-of-day inventory divided by capacity, averaged over trials |
+| `max_peak_utilisation` | The highest single-trial peak utilisation |
+| `mean_days_at_capacity` | Days per trial on which the site was full |
+| `capacity_enforced` | Whether the scenario set `enforce_capacity` |
+
+The report is also useful for uncapped runs: a peak utilisation above one shows how far
+the unconstrained policy would overfill the site, before deciding whether to enforce
+capacity. Lanes without a recorded capacity are left out of the report.
+
+`meridian.engine.days_at_capacity` and `meridian.engine.capacity_summary` give the same
+measures for individual trials.
+
+Example lane CSV with capacities:
+
+```text
+site_id,product,...,purchase_cost_per_kg,storage_capacity_kg
+Harbor,nitrogen,...,0.18,12000
+Harbor,oxygen,...,0.21,
+```
+
+Example scenario JSON:
+
+```json
+{"scenario_id": "capped", "horizon_days": 90, "enforce_capacity": true}
+```
+
+### Checking a capacity study
+
+A practical sequence for a capacity study:
+
+1. Add `storage_capacity_kg` for the sites of interest and run the scenario *without*
+   `enforce_capacity`. Use `capacity_report` to see which chosen policies would overfill
+   their sites.
+2. Run the same scenario with `"enforce_capacity": true` and a different `scenario_id`.
+   Use `meridian compare` to compare total cost and fill rate between the two runs; both
+   runs share the same seed, so differences come from the capacity limit and not from
+   different demand samples.
+3. For lanes that lose service when capped, try a larger capacity or a shorter lead time
+   and compare again.
+
+Because both runs use the same lane CSV, their `input_sha256` values differ only through
+the `enforce_capacity` setting, which makes the pair easy to identify later.
+
+Limitations: capacity is per product-location, not shared between products at the same
+site, and there is no cost for product waiting at the supplier.
+
 ## Policy choice and validation
 
 A normal newsvendor approximation to protection-period demand centers a finite

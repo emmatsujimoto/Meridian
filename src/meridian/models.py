@@ -52,6 +52,7 @@ class Lane:
     backlog_cost_per_kg_day: float
     delivery_cost_per_order: float
     purchase_cost_per_kg: float
+    storage_capacity_kg: float | None = None
 
     def __post_init__(self):
         identifier(self.site_id, "site_id")
@@ -73,6 +74,11 @@ class Lane:
         object.__setattr__(
             self, "lead_time_days", integer(self.lead_time_days, "lead_time_days", 0, 30)
         )
+        if self.storage_capacity_kg is not None:
+            capacity = number(self.storage_capacity_kg, "storage_capacity_kg", strict=True)
+            if self.initial_inventory_kg > capacity:
+                raise InputError("initial_inventory_kg must not exceed storage_capacity_kg")
+            object.__setattr__(self, "storage_capacity_kg", capacity)
 
     @property
     def key(self) -> str:
@@ -90,9 +96,12 @@ class Settings:
     demand_multiplier: float = 1.0
     service_target: float = 0.95
     stock_multipliers: tuple[float, ...] = (0.75, 1.0, 1.25, 1.5)
+    enforce_capacity: bool = False
 
     def __post_init__(self):
         identifier(self.scenario_id, "scenario_id")
+        if not isinstance(self.enforce_capacity, bool):
+            raise InputError("enforce_capacity must be true or false")
         for field, lower, upper in (
             ("horizon_days", 1, 366),
             ("replications", 1, 100),

@@ -31,8 +31,17 @@ def load_settings(path: str | Path) -> Settings:
     return Settings(**data)
 
 
+OPTIONAL_COLUMNS = {"storage_capacity_kg"}
+
+
 def load_lanes(path: str | Path) -> tuple[Lane, ...]:
+    """Read product-location rows.
+
+    ``storage_capacity_kg`` is optional: the column may be left out, and a blank cell
+    means the site's capacity is not recorded.
+    """
     expected = {f.name for f in fields(Lane)}
+    required = expected - OPTIONAL_COLUMNS
     lanes = []
     seen = set()
     try:
@@ -41,17 +50,22 @@ def load_lanes(path: str | Path) -> tuple[Lane, ...]:
             header = reader.fieldnames or []
             if len(header) != len(set(header)):
                 raise InputError("CSV contains duplicate column names")
-            if set(header) != expected:
-                missing = sorted(expected - set(header))
+            if not required <= set(header) <= expected:
+                missing = sorted(required - set(header))
                 extra = sorted(set(header) - expected)
                 raise InputError(f"CSV schema mismatch; missing={missing}, extra={extra}")
             for row_number, row in enumerate(reader, start=2):
                 if len(lanes) >= 100:
                     raise InputError("At most 100 product-location rows are supported")
-                if None in row or any(v is None or not v.strip() for v in row.values()):
+                if None in row or any(v is None for v in row.values()):
                     raise InputError(f"CSV row {row_number}: missing or extra values")
+                values = {k: v.strip() for k, v in row.items()}
+                if any(not values[k] for k in required):
+                    raise InputError(f"CSV row {row_number}: missing or extra values")
+                if not values.get("storage_capacity_kg", "x"):
+                    values["storage_capacity_kg"] = None
                 try:
-                    lane = Lane(**{k: v.strip() for k, v in row.items()})
+                    lane = Lane(**values)
                 except InputError as exc:
                     raise InputError(f"CSV row {row_number}: {exc}") from exc
                 if lane.key in seen:

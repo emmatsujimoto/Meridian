@@ -8,10 +8,19 @@ import numpy as np
 from meridian.models import InputError, Lane, Settings
 
 
+def _clip_negative(samples: np.ndarray) -> np.ndarray:
+    """Return the draws with any negative values replaced by zero."""
+    # Rounding in extreme lognormal settings can give draws a hair below zero, which the
+    # simulator would treat as returned product. Demand is clipped at 1 so every day
+    # passed to the simulator is a valid, nonnegative quantity.
+    return np.clip(samples, 0.0, None)
+
+
 def demand_traces(lane: Lane, settings: Settings, phase: str) -> tuple[tuple[float, ...], ...]:
     """Lognormal moments match configured mean/SD; multiplier scales both.
 
     Stable lane seeds make results independent of CSV row order and Python hash seeds.
+    Draws are never negative, whatever the configured mean and SD.
     These synthetic demand assumptions are not fitted to any real supplier's demand.
     """
     if phase not in {"training", "validation"}:
@@ -28,4 +37,5 @@ def demand_traces(lane: Lane, settings: Settings, phase: str) -> tuple[tuple[flo
         samples = rng.lognormal(np.log(mean) - sigma_sq / 2, sqrt(sigma_sq), size=shape)
     if not np.all(np.isfinite(samples)):
         raise InputError("Demand settings overflow; reduce mean, deviation or multiplier")
+    samples = _clip_negative(samples)
     return tuple(tuple(float(x) for x in row) for row in samples)

@@ -3,6 +3,7 @@
 import argparse
 import json
 import sys
+import time
 
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
@@ -30,6 +31,14 @@ def parser() -> argparse.ArgumentParser:
     return root
 
 
+def _format_duration(seconds: float) -> str:
+    """Seconds below a minute, otherwise minutes and whole seconds."""
+    if seconds < 60:
+        return f"{seconds:.1f} s"
+    minutes, remainder = divmod(round(seconds), 60)
+    return f"{minutes} min {remainder:02d} s"
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
@@ -52,9 +61,12 @@ def main(argv: list[str] | None = None) -> int:
                 )
             print(json.dumps(rows, indent=2, allow_nan=False))
         else:
+            t = time.perf_counter()
             result = run_scenario(lanes, settings)
+            t = time.perf_counter() - t
             destination = export_run(result, args.output)
             print(f"Results saved to {destination}")
+            print(f"Simulation took {_format_duration(t)}")
         return 0
     except (InputError, OSError) as exc:
         print(f"Input/output error: {exc}", file=sys.stderr)

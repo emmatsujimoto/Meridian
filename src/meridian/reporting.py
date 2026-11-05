@@ -7,9 +7,12 @@ import platform
 from dataclasses import asdict
 from datetime import datetime, timezone
 from importlib.metadata import version
+from json import JSONEncoder as JSONEncoder
 from pathlib import Path
 from statistics import fmean, stdev
 from uuid import uuid4
+
+import numpy as np
 
 from meridian import __version__
 from meridian.bundles import verify_bundle
@@ -181,3 +184,29 @@ def compare_reports(paths: list[str | Path]) -> list[dict]:
         }
         for _, r in sorted(reports, key=lambda pair: pair[1]["total_mean_cost"])
     ]
+
+
+def comparison_json(rows: list[dict]) -> str:
+    """The comparison as an indented JSON list, adding each scenario's cost relative to the cheapest."""
+    cheapest = min(row["total_mean_cost"] for row in rows)
+    document = [
+        {**row, "cost_vs_cheapest": float(round(row["total_mean_cost"] / cheapest, 4))}
+        for row in rows
+    ]
+    return json.dumps(document, indent=2, allow_nan=False)
+
+
+def comparison_yaml(rows: list[dict]) -> str:
+    """The comparison as YAML that round-trips with yaml.safe_load."""
+    try:
+        import yaml
+    except ImportError as exc:
+        raise InputError(
+            "YAML output needs PyYAML: pip install 'meridian-gas-planner[yaml]'"
+        ) from exc
+    costs = np.array([row["total_mean_cost"] for row in rows])
+    document = [
+        {**row, "cost_vs_cheapest": np.round(cost / costs.min(), 4)}
+        for row, cost in zip(rows, costs)
+    ]
+    return yaml.dump(document, sort_keys=False)

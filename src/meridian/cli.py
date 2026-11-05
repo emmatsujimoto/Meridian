@@ -7,7 +7,7 @@ import sys
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
-from meridian.reporting import compare_reports, export_run
+from meridian.reporting import compare_reports, comparison_json, comparison_yaml, export_run
 
 
 def parser() -> argparse.ArgumentParser:
@@ -27,6 +27,9 @@ def parser() -> argparse.ArgumentParser:
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
+    compare.add_argument(
+        "--format", choices=("json", "yaml"), default="json", help="Output format (default json)"
+    )
     return root
 
 
@@ -34,7 +37,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
         if args.command == "compare":
-            print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
+            rows = compare_reports(args.reports)
+            print(comparison_yaml(rows) if args.format == "yaml" else comparison_json(rows))
             return 0
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)

@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 
+from meridian.html_report import write_html
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
@@ -27,6 +28,9 @@ def parser() -> argparse.ArgumentParser:
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
+    html = commands.add_parser("html-report", help="Write an HTML report with a cost chart")
+    html.add_argument("summary", help="summary.json of a completed run")
+    html.add_argument("--output", help="HTML file to write (default: report.html in the bundle)")
     return root
 
 
@@ -35,6 +39,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
+            return 0
+        if args.command == "html-report":
+            print(f"HTML report written to {write_html(args.summary, args.output)}")
             return 0
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)

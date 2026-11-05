@@ -4,6 +4,14 @@ import argparse
 import json
 import sys
 
+from meridian.batching import (
+    best_windows,
+    compare_windows,
+    consolidate_orders,
+    orders_from_result,
+    totals,
+    write_batching,
+)
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
@@ -17,10 +25,18 @@ def parser() -> argparse.ArgumentParser:
         ("validate", "Validate input files without running models"),
         ("run", "Compare policies and export independent validation results"),
         ("benchmark", "Calculate EOQ and deterministic lot-sizing benchmarks"),
+        ("batching", "Estimate savings from combining orders within a window"),
     ):
         command = commands.add_parser(name, help=help_text)
         command.add_argument("--data", required=True, help="Synthetic product-location CSV")
         command.add_argument("--config", required=True, help="Scenario JSON")
+        if name == "batching":
+            command.add_argument("--window", type=int, default=3, help="Batching window in days")
+            command.add_argument("--replication", type=int, default=1, help="Replication to use")
+            command.add_argument("--output", default="results", help="Folder for batching.csv")
+            command.add_argument(
+                "--compare", type=int, nargs="+", help="Also compare these windows, e.g. 1 3 7"
+            )
         if name == "run":
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
@@ -51,6 +67,25 @@ def main(argv: list[str] | None = None) -> int:
                     }
                 )
             print(json.dumps(rows, indent=2, allow_nan=False))
+        elif args.command == "batching":
+            found = orders_from_result(run_scenario(lanes, settings), args.replication)
+            rows = consolidate_orders(found, args.window)
+            total = totals(rows)
+            path = write_batching(rows, args.output)
+            print(
+                f"{total['orders']} orders become {total['deliveries']} deliveries; delivery cost "
+                f"${total['delivery_cost_before']:,.0f} -> ${total['delivery_cost_after']:,.0f}; "
+                f"net saving ${total['net_saving']:,.0f}"
+            )
+            print(f"Batching estimate saved to {path}")
+            if args.compare:
+                for row in compare_windows(found, args.compare):
+                    print(
+                        f"window {row['window_days']} days: {row['deliveries']} deliveries, "
+                        f"net saving ${row['net_saving']:,.0f}"
+                    )
+                for lane, days in best_windows(found, args.compare).items():
+                    print(f"best window for {lane}: {days} days")
         else:
             result = run_scenario(lanes, settings)
             destination = export_run(result, args.output)

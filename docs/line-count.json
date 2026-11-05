@@ -2,15 +2,15 @@
   "method": "Python token-bearing physical lines excluding docstrings, comments and blanks",
   "target_code_lines": 8500,
   "totals": {
-    "files": 41,
-    "physical": 20825,
-    "code": 8500
+    "files": 44,
+    "physical": 21655,
+    "code": 9078
   },
   "groups": {
     "application": {
-      "files": 10,
-      "physical": 802,
-      "code": 664
+      "files": 11,
+      "physical": 1145,
+      "code": 907
     },
     "upstream_source": {
       "files": 16,
@@ -23,9 +23,9 @@
       "code": 2897
     },
     "application_tests": {
-      "files": 6,
-      "physical": 727,
-      "code": 545
+      "files": 8,
+      "physical": 1214,
+      "code": 880
     },
     "maintenance_scripts": {
       "files": 2,
@@ -51,13 +51,13 @@
     },
     "src/meridian/cli.py": {
       "group": "application",
-      "physical": 65,
-      "code": 56
+      "physical": 119,
+      "code": 107
     },
     "src/meridian/demand.py": {
       "group": "application",
-      "physical": 31,
-      "code": 20
+      "physical": 27,
+      "code": 14
     },
     "src/meridian/engine.py": {
       "group": "application",
@@ -71,13 +71,18 @@
     },
     "src/meridian/models.py": {
       "group": "application",
-      "physical": 177,
-      "code": 139
+      "physical": 179,
+      "code": 141
     },
     "src/meridian/planning.py": {
       "group": "application",
       "physical": 118,
       "code": 93
+    },
+    "src/meridian/plugins.py": {
+      "group": "application",
+      "physical": 291,
+      "code": 196
     },
     "src/meridian/reporting.py": {
       "group": "application",
@@ -179,6 +184,11 @@
       "physical": 132,
       "code": 99
     },
+    "tests/meridian/test_demand_models.py": {
+      "group": "application_tests",
+      "physical": 207,
+      "code": 138
+    },
     "tests/meridian/test_edge_cases.py": {
       "group": "application_tests",
       "physical": 132,
@@ -193,6 +203,11 @@
       "group": "application_tests",
       "physical": 173,
       "code": 128
+    },
+    "tests/meridian/test_plugins.py": {
+      "group": "application_tests",
+      "physical": 280,
+      "code": 197
     },
     "tests/meridian/test_reporting_cli.py": {
       "group": "application_tests",

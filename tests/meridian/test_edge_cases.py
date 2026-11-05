@@ -126,7 +126,7 @@ def test_interrupted_export_has_no_completion_marker(tmp_path, lane, settings, m
     assert len(folders) == 1
     assert (folders[0] / "summary.json").is_file()
     assert not (folders[0] / "COMPLETE.json").exists()
-    assert not (folders[0] / "lanes.csv").exists()
+    assert not (folders[0] / "candidates.csv").exists()
     assert folders[0].name.startswith(settings.scenario_id)
     with pytest.raises(InputError, match="COMPLETE"):
         verify_bundle(folders[0] / "summary.json")

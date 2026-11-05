@@ -83,6 +83,19 @@ def _write_csv(path: Path, rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
+def _write_lanes_csv(path: Path, rows: list[dict], notes: dict[str, str]) -> None:
+    """lanes.csv with each product-location's input notes as the last column."""
+    if not rows:
+        raise InputError("Cannot export an empty result table")
+    columns = list(rows[0])
+    lines = [",".join([*columns, "notes"])]
+    for row in rows:
+        values = [str(row[column]) for column in columns]
+        values.append(notes.get(row["lane"], ""))
+        lines.append(",".join(values))
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def export_run(result: RunResult, output_root: str | Path) -> Path:
     """Create a unique bundle. COMPLETE.json is written only after all exports succeed."""
     root = Path(output_root).resolve()
@@ -94,7 +107,11 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
     (destination / "summary.json").write_text(
         json.dumps(report, indent=2, allow_nan=False) + "\n", encoding="utf-8"
     )
-    _write_csv(destination / "lanes.csv", report["lanes"])
+    _write_lanes_csv(
+        destination / "lanes.csv",
+        report["lanes"],
+        {lane.key: lane.notes for lane in result.lanes},
+    )
     candidates = []
     traces = []
     for lane_result in result.results:

@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 
+from meridian.alerts import alert_history, alert_summary, summary_lines, write_history
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
@@ -27,6 +28,16 @@ def parser() -> argparse.ArgumentParser:
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
+    alerts = commands.add_parser("alerts", help="Summarise stockout alerts from a completed run")
+    alerts.add_argument("summary", help="summary.json of a completed run")
+    alerts.add_argument(
+        "--history",
+        action="store_true",
+        help="Also write every alert raised during the run to alerts_history.csv",
+    )
+    alerts.add_argument(
+        "--output", default=".", help="Folder for alerts_history.csv (default: current folder)"
+    )
     return root
 
 
@@ -35,6 +46,13 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
+            return 0
+        if args.command == "alerts":
+            print("\n".join(summary_lines(alert_summary(args.summary))))
+            if args.history:
+                history = alert_history(args.summary)
+                path = write_history(history, args.output)
+                print(f"{len(history)} alerts written to {path}")
             return 0
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)

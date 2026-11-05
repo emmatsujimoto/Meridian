@@ -2,15 +2,15 @@
   "method": "Python token-bearing physical lines excluding docstrings, comments and blanks",
   "target_code_lines": 8500,
   "totals": {
-    "files": 41,
-    "physical": 20825,
-    "code": 8500
+    "files": 43,
+    "physical": 21220,
+    "code": 8805
   },
   "groups": {
     "application": {
-      "files": 10,
-      "physical": 802,
-      "code": 664
+      "files": 11,
+      "physical": 985,
+      "code": 800
     },
     "upstream_source": {
       "files": 16,
@@ -23,9 +23,9 @@
       "code": 2897
     },
     "application_tests": {
-      "files": 6,
-      "physical": 727,
-      "code": 545
+      "files": 7,
+      "physical": 939,
+      "code": 714
     },
     "maintenance_scripts": {
       "files": 2,
@@ -51,8 +51,13 @@
     },
     "src/meridian/cli.py": {
       "group": "application",
-      "physical": 65,
-      "code": 56
+      "physical": 95,
+      "code": 86
+    },
+    "src/meridian/currency.py": {
+      "group": "application",
+      "physical": 153,
+      "code": 106
     },
     "src/meridian/demand.py": {
       "group": "application",
@@ -178,6 +183,11 @@
       "group": "application_tests",
       "physical": 132,
       "code": 99
+    },
+    "tests/meridian/test_currency.py": {
+      "group": "application_tests",
+      "physical": 212,
+      "code": 169
     },
     "tests/meridian/test_edge_cases.py": {
       "group": "application_tests",

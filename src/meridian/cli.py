@@ -4,6 +4,14 @@ import argparse
 import json
 import sys
 
+from meridian.emissions import (
+    deliveries,
+    lane_emissions,
+    load_distances,
+    site_emissions,
+    totals,
+    write_emissions,
+)
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
@@ -17,10 +25,15 @@ def parser() -> argparse.ArgumentParser:
         ("validate", "Validate input files without running models"),
         ("run", "Compare policies and export independent validation results"),
         ("benchmark", "Calculate EOQ and deterministic lot-sizing benchmarks"),
+        ("emissions", "Estimate delivery CO2 from simulated orders"),
     ):
         command = commands.add_parser(name, help=help_text)
         command.add_argument("--data", required=True, help="Synthetic product-location CSV")
         command.add_argument("--config", required=True, help="Scenario JSON")
+        if name == "emissions":
+            command.add_argument("--distances", required=True, help="JSON of site: one-way km")
+            command.add_argument("--output", default="results", help="Folder for emissions.csv")
+            command.add_argument("--replication", type=int, default=1, help="Replication to use")
         if name == "run":
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
@@ -51,6 +64,17 @@ def main(argv: list[str] | None = None) -> int:
                     }
                 )
             print(json.dumps(rows, indent=2, allow_nan=False))
+        elif args.command == "emissions":
+            distances = load_distances(args.distances)
+            found = deliveries(run_scenario(lanes, settings), args.replication)
+            lane_rows = lane_emissions(found, distances)
+            total = totals(lane_rows, site_emissions(found, distances))
+            path = write_emissions(lane_rows, args.output)
+            print(
+                f"{total['trips']} trips, {total['distance_km']:,.0f} km, "
+                f"{total['kg_co2']:,.0f} kg CO2 ({total['kg_co2_per_tonne']:.2f} kg per tonne)"
+            )
+            print(f"Emissions saved to {path}")
         else:
             result = run_scenario(lanes, settings)
             destination = export_run(result, args.output)

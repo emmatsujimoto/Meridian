@@ -58,6 +58,21 @@ python -m meridian compare results/<run-one>/summary.json results/<run-two>/summ
 The `benchmark` command provides EOQ and Wagner-Whitin calculations. They have
 different assumptions from the stochastic simulation and are labeled separately.
 
+## Results API
+
+`meridian serve` publishes completed result bundles over HTTP for dashboards and
+notebooks, behind an API key read from `MERIDIAN_API_KEY`:
+
+```bash
+export MERIDIAN_API_KEY="<at least 16 characters>"
+python -m meridian serve --results results
+curl -H "X-API-Key: $MERIDIAN_API_KEY" http://127.0.0.1:8765/results
+```
+
+`POST /what-if/capacity` shares proposed daily plant capacities between a bundle's
+product-locations and reports which sites would be short; `meridian what-if` does the
+same from the command line. See [docs/api.md](docs/api.md) for every endpoint.
+
 ## Repository map
 
 | Location | Contents |
@@ -68,6 +83,8 @@ different assumptions from the stochastic simulation and are labeled separately.
 | `src/meridian/engine.py` | Adapter to the Stockpyl inventory simulator |
 | `src/meridian/planning.py` | Candidate selection, EOQ and deterministic lot-sizing benchmarks |
 | `src/meridian/reporting.py` | Cost summaries, CSV/JSON exports and scenario comparison |
+| `src/meridian/server.py` | Read-only results API with the capacity what-if endpoint |
+| `src/meridian/whatif.py` | Sharing proposed plant capacity between product-locations |
 | `src/meridian/cli.py` | Local command-line interface |
 | `src/stockpyl/` | Selected upstream inventory algorithms and their required network objects |
 | `data/` | Six fictional product-location input rows |

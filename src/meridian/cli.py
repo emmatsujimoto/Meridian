@@ -3,7 +3,9 @@
 import argparse
 import json
 import sys
+from pathlib import Path
 
+from meridian.echelon import depot_summary, load_depots, plan_echelon
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
@@ -17,10 +19,14 @@ def parser() -> argparse.ArgumentParser:
         ("validate", "Validate input files without running models"),
         ("run", "Compare policies and export independent validation results"),
         ("benchmark", "Calculate EOQ and deterministic lot-sizing benchmarks"),
+        ("echelon", "Plan site stock resupplied from regional depots"),
     ):
         command = commands.add_parser(name, help=help_text)
         command.add_argument("--data", required=True, help="Synthetic product-location CSV")
         command.add_argument("--config", required=True, help="Scenario JSON")
+        if name == "echelon":
+            command.add_argument("--depots", required=True, help="Depot JSON (lead times, sites)")
+            command.add_argument("--output", default="results", help="Folder for echelon.csv")
         if name == "run":
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
@@ -51,6 +57,14 @@ def main(argv: list[str] | None = None) -> int:
                     }
                 )
             print(json.dumps(rows, indent=2, allow_nan=False))
+        elif args.command == "echelon":
+            rows = plan_echelon(lanes, settings, args.depots, args.output)
+            for depot in depot_summary(rows, load_depots(args.depots)):
+                print(
+                    f"{depot['depot']}: {depot['lanes']} lanes, shortfall {depot['shortfall_kg']:,.0f} kg, "
+                    f"allocated {depot['allocated_kg']:,.0f} kg, left {depot['left_at_depot_kg']:,.0f} kg"
+                )
+            print(f"Echelon plan saved to {Path(args.output).resolve() / 'echelon.csv'}")
         else:
             result = run_scenario(lanes, settings)
             destination = export_run(result, args.output)

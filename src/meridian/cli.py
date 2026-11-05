@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 
+from meridian.dashboard import write_dashboard
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
@@ -27,6 +28,14 @@ def parser() -> argparse.ArgumentParser:
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
+    dashboard = commands.add_parser("dashboard", help="Write an HTML page comparing bundles")
+    dashboard.add_argument(
+        "sources", nargs="+", help="summary.json files, bundle folders or a results folder"
+    )
+    dashboard.add_argument("--output", default="dashboard.html", help="HTML file to write")
+    dashboard.add_argument(
+        "--baseline", help="Scenario id to show cost and fill-rate changes against"
+    )
     return root
 
 
@@ -35,6 +44,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
+            return 0
+        if args.command == "dashboard":
+            path = write_dashboard(args.sources, args.output, baseline=args.baseline)
+            print(f"Dashboard saved to {path}")
             return 0
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)

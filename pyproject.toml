@@ -26,6 +26,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 stockpyl = ["datasets/*.json"]
+meridian = ["templates/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

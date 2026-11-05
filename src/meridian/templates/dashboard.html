@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meridian scenario dashboard</title>
+<style>
+  :root {
+    --ink: #1d2733;
+    --muted: #5b6878;
+    --line: #d9dee5;
+    --panel: #ffffff;
+    --page: #f4f6f9;
+    --accent: #1f5fa8;
+    --good: #e3f1e4;
+    --bad: #fbe3e1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--page);
+  }
+  header {
+    padding: 24px 32px 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+  header h1 { margin: 0 0 4px; font-size: 22px; }
+  header p { margin: 0; color: var(--muted); }
+  main { padding: 24px 32px 48px; max-width: 1280px; margin: 0 auto; }
+  section {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+  }
+  section h2 { margin: 0 0 4px; font-size: 17px; }
+  section .lead { margin: 0 0 16px; color: var(--muted); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .tile { border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
+  .tile .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .tile .value { font-size: 22px; font-weight: 600; margin-top: 6px; }
+  .tile .note { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-weight: 600; color: var(--muted); cursor: pointer; user-select: none; }
+  th[aria-sort="ascending"]::after { content: " \25B2"; }
+  th[aria-sort="descending"]::after { content: " \25BC"; }
+  td.description { text-align: left; white-space: normal; max-width: 360px; color: var(--muted); }
+  td.below { background: var(--bad); }
+  td.meets { background: var(--good); }
+  .chart { width: 100%; height: auto; }
+  .chart text { font-size: 12px; fill: var(--ink); }
+  .chart .axis { stroke: var(--line); }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; color: var(--muted); font-size: 12px; }
+  .legend span::before {
+    content: "";
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
+    border-radius: 2px;
+    background: var(--swatch);
+  }
+  details { border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px; }
+  details summary { padding: 10px 14px; cursor: pointer; font-weight: 600; }
+  details[open] summary { border-bottom: 1px solid var(--line); }
+  details table { margin: 0; }
+  a.download {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 6px 12px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  a.download:hover { background: var(--accent); color: #fff; }
+  footer { color: var(--muted); font-size: 12px; padding: 0 32px 32px; max-width: 1280px; margin: 0 auto; }
+  @media print {
+    body { background: #fff; }
+    section { break-inside: avoid; border-color: #bbb; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Meridian scenario dashboard</h1>
+  <p>$subtitle</p>
+</header>
+<main>
+  <section aria-labelledby="overview">
+    <h2 id="overview">Overview</h2>
+    <p class="lead">Best scenario by mean validation cost, and the spread across all scenarios compared.</p>
+    <div class="tiles">$tiles</div>
+  </section>
+  <section aria-labelledby="scenarios">
+    <h2 id="scenarios">Scenarios</h2>
+    <p class="lead">One row per completed result bundle. Click a column heading to sort.</p>
+    <table class="sortable">
+      <thead>
+        <tr>
+          <th scope="col">Scenario</th>
+          <th scope="col">Description</th>
+          <th scope="col">Horizon (days)</th>
+          <th scope="col">Replications</th>
+          <th scope="col">Mean total cost (USD)</th>
+          <th scope="col">Fill rate</th>
+          <th scope="col">Lanes meeting target</th>
+          <th scope="col">Inputs</th>
+          <th scope="col">Cost per kg (USD)</th>
+          $change_headers
+        </tr>
+      </thead>
+      <tbody>$scenario_rows</tbody>
+    </table>
+    $csv_link
+  </section>
+  <section aria-labelledby="settings">
+    <h2 id="settings">What differs between scenarios</h2>
+    <p class="lead">Settings whose values are not the same in every scenario.</p>
+    <table>
+      <thead><tr>$settings_header</tr></thead>
+      <tbody>$settings_rows</tbody>
+    </table>
+  </section>
+  <section aria-labelledby="cost">
+    <h2 id="cost">Cost by component</h2>
+    <p class="lead">Mean validation cost per scenario, split into holding, backlog, delivery and purchase cost.</p>
+    $cost_chart
+  </section>
+  <section aria-labelledby="service">
+    <h2 id="service">Service</h2>
+    <p class="lead">Volume-weighted immediate fill rate per scenario.</p>
+    $service_chart
+  </section>
+  <section aria-labelledby="lanes">
+    <h2 id="lanes">Fill rate by product-location</h2>
+    <p class="lead">Validation fill rate of each product-location in each scenario. Shaded cells fall below the service target.</p>
+    <table class="sortable">
+      <thead><tr>$lane_header</tr></thead>
+      <tbody>$lane_rows</tbody>
+    </table>
+  </section>
+  <section aria-labelledby="lane-cost">
+    <h2 id="lane-cost">Cost by product-location</h2>
+    <p class="lead">Mean validation cost of each product-location in each scenario (USD).</p>
+    <table class="sortable">
+      <thead><tr>$cost_header</tr></thead>
+      <tbody>$cost_rows</tbody>
+    </table>
+  </section>
+  <section aria-labelledby="detail">
+    <h2 id="detail">Scenario detail</h2>
+    <p class="lead">Expand a scenario to see each product-location's base stock, cost and service.</p>
+    $details
+  </section>
+</main>
+<footer>
+  Generated by meridian $version on $generated. Figures come from each bundle's verified summary.json.
+  Synthetic costs and demand for the fictional Meridian Industrial Gases; results are not operational instructions.
+</footer>
+<script>
+  (function () {
+    function cellValue(row, index) {
+      var cell = row.children[index];
+      var raw = cell.getAttribute("data-sort");
+      if (raw === null) {
+        raw = cell.textContent.trim();
+      }
+      var number = parseFloat(raw.replace(/[,%]/g, ""));
+      return isNaN(number) ? raw.toLowerCase() : number;
+    }
+
+    function sortTable(table, index, header) {
+      var body = table.tBodies[0];
+      var rows = Array.prototype.slice.call(body.rows);
+      var ascending = header.getAttribute("aria-sort") !== "ascending";
+      rows.sort(function (a, b) {
+        var x = cellValue(a, index);
+        var y = cellValue(b, index);
+        if (x < y) { return ascending ? -1 : 1; }
+        if (x > y) { return ascending ? 1 : -1; }
+        return 0;
+      });
+      Array.prototype.forEach.call(header.parentNode.children, function (th) {
+        th.removeAttribute("aria-sort");
+      });
+      header.setAttribute("aria-sort", ascending ? "ascending" : "descending");
+      rows.forEach(function (row) { body.appendChild(row); });
+    }
+
+    document.querySelectorAll("table.sortable").forEach(function (table) {
+      Array.prototype.forEach.call(table.tHead.rows[0].cells, function (header, index) {
+        header.addEventListener("click", function () { sortTable(table, index, header); });
+      });
+    });
+  })();
+</script>
+</body>
+</html>

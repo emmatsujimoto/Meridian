@@ -52,9 +52,12 @@ class Lane:
     backlog_cost_per_kg_day: float
     delivery_cost_per_order: float
     purchase_cost_per_kg: float
+    notes: str = ""
 
     def __post_init__(self):
         identifier(self.site_id, "site_id")
+        if not isinstance(self.notes, str):
+            raise InputError("notes must be text")
         if self.product not in {"nitrogen", "oxygen", "argon"}:
             raise InputError("product must be nitrogen, oxygen, or argon")
         positive = {"daily_mean_kg", "holding_cost_per_kg_day", "backlog_cost_per_kg_day"}

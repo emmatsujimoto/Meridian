@@ -8,6 +8,13 @@ from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
+from meridian.sensing import (
+    adjusted_lanes,
+    sense_demand,
+    sensed_rows,
+    sensing_table,
+    write_lanes,
+)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -25,6 +32,13 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
             )
+    sense = commands.add_parser(
+        "sense", help="Adjust planned daily demand using recent sales (demand sensing)"
+    )
+    sense.add_argument("--data", required=True, help="Synthetic product-location CSV (the plan)")
+    sense.add_argument("--sales", required=True, help="Recent daily sales CSV")
+    sense.add_argument("--format", choices=("table", "json"), default="table", help="Output format")
+    sense.add_argument("--write", help="Also write adjusted product-location rows to this new CSV")
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
     return root
@@ -35,6 +49,17 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
+            return 0
+        if args.command == "sense":
+            lanes = load_lanes(args.data)
+            sensed = sense_demand(lanes, args.sales)
+            if args.format == "json":
+                print(json.dumps(sensed_rows(sensed), indent=2, allow_nan=False))
+            else:
+                print(sensing_table(sensed), end="")
+            if args.write:
+                path = write_lanes(adjusted_lanes(lanes, sensed), args.write)
+                print(f"Adjusted inputs written to {path}")
             return 0
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)

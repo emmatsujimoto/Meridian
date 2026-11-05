@@ -83,6 +83,58 @@ def _write_csv(path: Path, rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
+def lead_time_rows(result: RunResult) -> list[dict]:
+    """Days of demand covered by each lane's chosen stock level, against its lead time.
+
+    Cover is the chosen base-stock level divided by mean daily demand (after the demand
+    multiplier). A cover ratio below one means the stock level cannot cover average
+    demand over one replenishment lead time.
+    """
+    lanes = {lane.key: lane for lane in result.lanes}
+    rows = []
+    for lane_result in result.results:
+        lane = lanes[lane_result.lane_key]
+        daily_demand = lane.daily_mean_kg * result.settings.demand_multiplier
+        cover = lane_result.chosen_base_stock_kg / daily_demand
+        lt = lane.lead_time_days
+        ratio = cover / lt
+        if ratio >= 1:
+            if ratio >= 1.5:
+                status = "comfortable"
+            else:
+                status = "tight"
+                if not lane_result.training_target_met:
+                    status = "tight; target missed in training"
+        else:
+            status = "below lead time"
+        rows.append(
+            {
+                "lane": lane.key,
+                "cover_days": cover,
+                "lead_time_days": lt,
+                "cover_ratio": ratio,
+                "status": status,
+            }
+        )
+    return rows
+
+
+def lead_time_section(result: RunResult) -> list[str]:
+    """report.md lines for the days-of-cover table."""
+    lines = [
+        "## Days of cover versus lead time",
+        "",
+        "| Product-location | Days of cover | Lead time (days) | Cover ratio | Status |",
+        "|---|---:|---:|---:|---|",
+    ]
+    for row in lead_time_rows(result):
+        lines.append(
+            f"| {row['lane']} | {row['cover_days']:.1f} | {row['lead_time_days']} "
+            f"| {row['cover_ratio']:.2f} | {row['status']} |"
+        )
+    return lines
+
+
 def export_run(result: RunResult, output_root: str | Path) -> Path:
     """Create a unique bundle. COMPLETE.json is written only after all exports succeed."""
     root = Path(output_root).resolve()
@@ -128,6 +180,7 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
         lines.append(
             f"| {row['lane']} | {row['base_stock_kg']:,.0f} | {row['validation_mean_cost']:,.2f} | {row['validation_mean_fill_rate']:.2%} | {row['validation_target_met']} |"
         )
+    lines.extend(["", *lead_time_section(result)])
     lines.extend(["", *[f"- {note}" for note in report["model_notes"]], ""])
     (destination / "report.md").write_text("\n".join(lines), encoding="utf-8")
     manifest = {

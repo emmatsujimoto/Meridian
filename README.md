@@ -55,6 +55,15 @@ python -m meridian benchmark --data data/synthetic_sites.csv --config config/qui
 python -m meridian compare results/<run-one>/summary.json results/<run-two>/summary.json
 ```
 
+### Backing up results
+
+`python -m meridian backup` copies completed result bundles to Azure Blob Storage, so
+results survive a lost laptop and can be shared with colleagues. Set
+`MERIDIAN_BACKUP_SAS_URL` to a SAS URL for the storage account first. Backups are
+incremental: bundles already in the container are skipped, so the command is quick to run
+after every study. Add `--dry-run` to list what would be uploaded. See
+[docs/backup.md](docs/backup.md).
+
 The `benchmark` command provides EOQ and Wagner-Whitin calculations. They have
 different assumptions from the stochastic simulation and are labeled separately.
 

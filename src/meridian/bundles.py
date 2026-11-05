@@ -3,6 +3,7 @@
 import hashlib
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 
 from meridian.models import InputError, identifier, integer, number
@@ -84,3 +85,22 @@ def validate_report(report: dict) -> dict:
     if abs(lane_cost - total) > max(1e-6, total * 1e-9):
         raise InputError("Lane costs do not reconcile to total cost")
     return report
+
+
+def list_bundles(output_root: str | Path) -> list[dict]:
+    """Completed bundles in a results folder, newest first, with their completion time."""
+    root = Path(output_root)
+    if not root.is_dir():
+        raise InputError(f"Results folder not found: {root}")
+    rows = []
+    for manifest_path in root.glob("*/COMPLETE.json"):
+        manifest = _json_object(manifest_path)
+        completed = manifest.get("completed_utc")
+        if not isinstance(completed, str):
+            continue
+        try:
+            completed_utc = datetime.fromisoformat(completed)
+        except ValueError:
+            continue
+        rows.append({"bundle": manifest_path.parent.name, "completed_utc": completed_utc})
+    return sorted(rows, key=lambda row: row["completed_utc"], reverse=True)

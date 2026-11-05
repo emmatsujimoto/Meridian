@@ -3,11 +3,20 @@
 import argparse
 import json
 import sys
+from datetime import datetime
 
+from meridian.bundles import list_bundles
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
+
+
+def parse_since(text: str) -> str:
+    try:
+        return datetime.strptime(text, "%d/%m/%Y").strftime("%d/%m/%Y")
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("dates must be D/M/YYYY, e.g. 5/11/2026") from exc
 
 
 def parser() -> argparse.ArgumentParser:
@@ -25,6 +34,11 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
             )
+    listing = commands.add_parser("list", help="List completed result bundles, newest first")
+    listing.add_argument("--output", default="results", help="Folder holding result bundles")
+    listing.add_argument(
+        "--since", type=parse_since, help="Only bundles completed on or after D/M/YYYY"
+    )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
     return root
@@ -35,6 +49,13 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
+            return 0
+        if args.command == "list":
+            for row in list_bundles(args.output):
+                completed = row["completed_utc"].strftime("%d/%m/%Y")
+                if args.since and completed < args.since:
+                    continue
+                print(f"{completed}  {row['bundle']}")
             return 0
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)

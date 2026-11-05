@@ -90,6 +90,9 @@ class Settings:
     demand_multiplier: float = 1.0
     service_target: float = 0.95
     stock_multipliers: tuple[float, ...] = (0.75, 1.0, 1.25, 1.5)
+    safety_stock_policy: str = "statistical"
+    safety_stock_kg: float = 0.0
+    safety_stock_percentage: float = 0.0
 
     def __post_init__(self):
         identifier(self.scenario_id, "scenario_id")
@@ -117,6 +120,13 @@ class Settings:
         if len(set(values)) != len(values):
             raise InputError("stock_multipliers must be distinct")
         object.__setattr__(self, "stock_multipliers", tuple(sorted(values)))
+        if self.safety_stock_policy not in {"statistical", "fixed", "percentage"}:
+            raise InputError("safety_stock_policy must be statistical, fixed or percentage")
+        object.__setattr__(self, "safety_stock_kg", number(self.safety_stock_kg, "safety_stock_kg"))
+        percentage = number(self.safety_stock_percentage, "safety_stock_percentage")
+        if percentage > 500:
+            raise InputError("safety_stock_percentage must be at most 500")
+        object.__setattr__(self, "safety_stock_percentage", percentage)
 
 
 @dataclass(frozen=True)

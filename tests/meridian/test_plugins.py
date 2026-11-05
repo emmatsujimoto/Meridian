@@ -214,3 +214,67 @@ def test_cli_lists_models_json(capsys):
     assert main(["models", "--json"]) == 0
     names = [row["name"] for row in json.loads(capsys.readouterr().out)]
     assert names == [model.name for model in BUILT_IN_MODELS]
+
+
+@pytest.mark.parametrize("name", [model.name for model in BUILT_IN_MODELS])
+def test_built_in_models_pass_checks(name):
+    assert all(row["passed"] for row in plugins.check_model(getModel(name)))
+
+
+def test_check_reports_shape_problem():
+    model = registerModel("fixed", lambda rng, mean, sd, shape: np.full((4, 30), mean))
+    results = {row["case"]: row for row in plugins.check_model(model)}
+    assert results["typical"]["passed"]
+    assert not results["single day"]["passed"]
+    assert "returned shape" in results["single day"]["detail"]
+
+
+def test_check_reports_unseeded_model():
+    unseeded = np.random.default_rng()
+
+    def noisy(rng, mean, sd, shape):
+        return np.full(shape, mean) + unseeded.uniform(0, 1, size=shape)
+
+    model = registerModel("noisy", noisy)
+    results = plugins.check_model(model)
+    assert not any(row["passed"] for row in results)
+    assert "use the rng argument" in results[0]["detail"]
+
+
+def test_check_reports_negative_draws():
+    model = registerModel("unclipped", lambda rng, mean, sd, shape: rng.normal(mean, sd, shape))
+    results = {row["case"]: row for row in plugins.check_model(model)}
+    assert results["zero deviation"]["passed"]
+    assert not results["high variability"]["passed"]
+
+
+def test_check_table():
+    text = plugins.check_table(
+        "demo",
+        [
+            {"case": "typical", "passed": True, "detail": "mean 100.00 for requested 100"},
+            {"case": "single day", "passed": False, "detail": "wrong shape"},
+        ],
+    )
+    lines = text.splitlines()
+    assert lines[0] == "Demand model demo:"
+    assert lines[1].startswith("  ok   typical")
+    assert lines[2].startswith("  FAIL single day")
+    assert lines[-1] == "1 of 2 checks passed"
+
+
+def test_cli_check_passes(capsys):
+    assert main(["models", "--check", "gamma"]) == 0
+    assert "5 of 5 checks passed" in capsys.readouterr().out
+
+
+def test_cli_check_fails(capsys):
+    registerModel("fixed", lambda rng, mean, sd, shape: np.full((4, 30), mean))
+    assert main(["models", "--check", "fixed", "--json"]) == 1
+    rows = json.loads(capsys.readouterr().out)
+    assert [row["passed"] for row in rows].count(False) == 1
+
+
+def test_cli_check_unknown(capsys):
+    assert main(["models", "--check", "weibull"]) == 2
+    assert "Unknown demand model" in capsys.readouterr().err

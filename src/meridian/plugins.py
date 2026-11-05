@@ -246,3 +246,46 @@ def preview_table(rows: list[dict]) -> str:
             f"{row['p50']:>10.1f}{row['p95']:>10.1f}{row['zero_share']:>8.1%}"
         )
     return "\n".join(lines)
+
+
+CHECK_CASES = (
+    ("typical", 100.0, 20.0, (4, 30)),
+    ("high variability", 100.0, 150.0, (4, 30)),
+    ("zero deviation", 100.0, 0.0, (4, 30)),
+    ("small mean", 0.5, 0.2, (4, 30)),
+    ("single day", 100.0, 20.0, (1, 1)),
+)
+
+
+def check_model(model: DemandModel, seed: int = 0) -> list[dict]:
+    """Run a model through standard inputs and report which ones it handles.
+
+    Each case also checks reproducibility: two generators with the same seed must give the
+    same draws, otherwise scenario results would change between runs.
+    """
+    results = []
+    for case, mean, sd, shape in CHECK_CASES:
+        try:
+            first = draw(model, np.random.default_rng(seed), mean, sd, shape)
+            second = draw(model, np.random.default_rng(seed), mean, sd, shape)
+        except InputError as exc:
+            results.append({"case": case, "passed": False, "detail": str(exc)})
+            continue
+        if not np.array_equal(first, second):
+            detail = "draws differ for the same seed; use the rng argument"
+            results.append({"case": case, "passed": False, "detail": detail})
+            continue
+        detail = f"mean {first.mean():.2f} for requested {mean:g}"
+        results.append({"case": case, "passed": True, "detail": detail})
+    return results
+
+
+def check_table(name: str, results: list[dict]) -> str:
+    """Readable pass/fail lines for ``meridian models --check``."""
+    lines = [f"Demand model {name}:"]
+    for row in results:
+        mark = "ok  " if row["passed"] else "FAIL"
+        lines.append(f"  {mark} {row['case']:<18} {row['detail']}")
+    failed = sum(not row["passed"] for row in results)
+    lines.append(f"{len(results) - failed} of {len(results)} checks passed")
+    return "\n".join(lines)

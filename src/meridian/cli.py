@@ -7,7 +7,14 @@ import sys
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
-from meridian.plugins import describe_models, getModel, preview_models, preview_table
+from meridian.plugins import (
+    check_model,
+    check_table,
+    describe_models,
+    getModel,
+    preview_models,
+    preview_table,
+)
 from meridian.reporting import compare_reports, export_run
 
 
@@ -39,6 +46,9 @@ def parser() -> argparse.ArgumentParser:
     models.add_argument("--mean", type=float, default=100.0, help="Daily mean kg for --preview")
     models.add_argument("--sd", type=float, default=20.0, help="Daily deviation kg for --preview")
     models.add_argument("--days", type=int, default=365, help="Days to draw for --preview")
+    models.add_argument(
+        "--check", metavar="MODEL", help="Run a model through standard inputs and report problems"
+    )
     return root
 
 
@@ -58,6 +68,13 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
             return 0
+        if args.command == "models" and args.check:
+            results = check_model(getModel(args.check))
+            if args.json:
+                print(json.dumps(results, indent=2))
+            else:
+                print(check_table(args.check, results))
+            return 0 if all(row["passed"] for row in results) else 1
         if args.command == "models" and args.preview is not None:
             rows = preview_models(args.preview, args.mean, args.sd, days=args.days)
             print(json.dumps(rows, indent=2) if args.json else preview_table(rows))

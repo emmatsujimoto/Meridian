@@ -119,6 +119,30 @@ not create your own random generator: results would no longer be reproducible.
 
 The sampler's docstring becomes the description shown by `meridian models`.
 
+### Checking a plugin
+
+`meridian models --check <name>` runs a model through five standard inputs: typical demand,
+high variability, zero deviation, a small mean and a single-day horizon. For each input it
+confirms that the output has the right shape, contains no negative or infinite values, and
+is identical when drawn twice from the same seed.
+
+```bash
+python -m meridian models --check weekly
+```
+
+```text
+Demand model weekly:
+  ok   typical            mean 114.21 for requested 100
+  ok   high variability   mean 162.80 for requested 100
+  ok   zero deviation     mean 114.29 for requested 100
+  ok   small mean         mean 0.57 for requested 0.5
+  ok   single day         mean 200.00 for requested 100
+5 of 5 checks passed
+```
+
+The command exits with status 0 when every check passes and 1 otherwise, so it can run in a
+plugin package's own CI. `--json` prints the results as a list of objects.
+
 ### Registering the plugin
 
 Declare an entry point in the plugin package's `pyproject.toml`. The entry point's name is

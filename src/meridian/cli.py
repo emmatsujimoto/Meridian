@@ -8,6 +8,8 @@ from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
+from meridian.scenario_diff import MISSING as MISSING_VALUE
+from meridian.scenario_diff import diff_settings, setting_changes
 
 
 def parser() -> argparse.ArgumentParser:
@@ -27,7 +29,45 @@ def parser() -> argparse.ArgumentParser:
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
+    scenario_diff = commands.add_parser(
+        "scenario-diff", help="List settings that differ between two scenario files"
+    )
+    scenario_diff.add_argument("before", help="First scenario JSON")
+    scenario_diff.add_argument("after", help="Second scenario JSON")
+    scenario_diff.add_argument(
+        "--ignore", action="append", default=[], help="Leave out this setting; repeatable"
+    )
+    scenario_diff.add_argument(
+        "--json", action="store_true", help="Print the changes as a JSON list"
+    )
+    scenario_diff.add_argument(
+        "--exit-code",
+        action="store_true",
+        help="Exit with status 1 when the scenarios differ, like diff",
+    )
     return root
+
+
+def _scenario_diff(args: argparse.Namespace) -> int:
+    """Handle ``meridian scenario-diff``."""
+    lines = diff_settings(args.before, args.after, tuple(args.ignore))
+    if args.json:
+        shown = {line.split(":")[0] for line in lines}
+        rows = [
+            {"setting": change.path, "kind": change.kind}
+            | {
+                side: None if value is MISSING_VALUE else value
+                for side, value in (("before", change.before), ("after", change.after))
+            }
+            for change in setting_changes(args.before, args.after)
+            if change.path in shown
+        ]
+        print(json.dumps(rows, indent=2))
+    elif lines:
+        print("\n".join(lines))
+    else:
+        print("No differences")
+    return 1 if args.exit_code and lines else 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -36,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
             return 0
+        if args.command == "scenario-diff":
+            return _scenario_diff(args)
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)
         if args.command == "validate":

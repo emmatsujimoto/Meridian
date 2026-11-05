@@ -13,12 +13,22 @@ from uuid import uuid4
 
 from meridian import __version__
 from meridian.bundles import verify_bundle
+from meridian.html_report import write_html
 from meridian.models import InputError, RunResult
+from meridian.stats import (
+    difference_interval,
+    lane_uncertainty,
+    portfolio_interval,
+    replication_costs,
+    replications_needed,
+    uncertain_lanes,
+)
 
 
 def summary(result: RunResult) -> dict:
     """Summaries use mean replicate costs and volume-weighted portfolio service."""
     rows = []
+    uncertainty = lane_uncertainty(result) if result.settings.replications > 1 else {}
     for lane_result in result.results:
         trials = lane_result.validation_trials
         costs = [t.total_cost for t in trials]
@@ -42,6 +52,7 @@ def summary(result: RunResult) -> dict:
                 ),
                 "mean_terminal_inventory_kg": fmean(t.periods[-1].inventory_kg for t in trials),
                 "mean_terminal_backlog_kg": fmean(t.periods[-1].backlog_kg for t in trials),
+                **uncertainty.get(lane_result.lane_key, {}),
             }
         )
     periods = [p for lr in result.results for t in lr.validation_trials for p in t.periods]
@@ -60,7 +71,24 @@ def summary(result: RunResult) -> dict:
         "currency": "USD",
         "quantity_unit": "kg",
         "total_mean_cost": sum(row["validation_mean_cost"] for row in rows),
+        "replication_total_costs": [
+            sum(lr.validation_trials[r].total_cost for lr in result.results)
+            for r in range(result.settings.replications)
+        ],
+        "total_cost_ci_95": (
+            list(portfolio_interval(result)) if result.settings.replications > 1 else None
+        ),
         "portfolio_fill_rate": service,
+        "replications_for_2pct_precision": (
+            replications_needed(
+                [
+                    sum(lr.validation_trials[r].total_cost for lr in result.results)
+                    for r in range(result.settings.replications)
+                ]
+            )
+            if result.settings.replications > 1
+            else None
+        ),
         "input_sha256": fingerprint,
         "lanes": rows,
         "inputs": inputs,
@@ -72,6 +100,35 @@ def summary(result: RunResult) -> dict:
             "Synthetic costs and demand; results are not operational instructions.",
         ],
     }
+
+
+def _uncertainty_lines(report: dict, service_target: float) -> list[str]:
+    """report.md paragraph on lanes whose service is not yet established, and replications."""
+    lines = []
+    lanes = uncertain_lanes(report, service_target)
+    if lanes:
+        lines.extend(
+            [
+                "",
+                "Meets the target on average, but the fill-rate interval reaches below it: "
+                + ", ".join(lanes)
+                + ".",
+            ]
+        )
+    needed = report.get("replications_for_2pct_precision")
+    if needed and needed > report["replications"]:
+        lines.extend(
+            ["", f"About {needed} replications would narrow the total-cost interval to ±2%."]
+        )
+    return lines
+
+
+def _total_interval(report: dict) -> str:
+    """Text for the portfolio cost interval in report.md, empty with one replication."""
+    interval = report.get("total_cost_ci_95")
+    if not interval:
+        return ""
+    return f" (95% CI ${interval[0]:,.2f}–{interval[1]:,.2f})"
 
 
 def _write_csv(path: Path, rows: list[dict]) -> None:
@@ -118,18 +175,25 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
         "Meridian Industrial Gases — fictional internal planning study.",
         "",
         f"Horizon: {result.settings.horizon_days} days. Replications: {result.settings.replications}.",
-        f"Mean total cost: ${report['total_mean_cost']:,.2f}.",
+        f"Mean total cost: ${report['total_mean_cost']:,.2f}{_total_interval(report)}.",
         f"Volume-weighted immediate fill rate: {report['portfolio_fill_rate']:.2%}.",
         "",
-        "| Product-location | Base stock (kg) | Mean cost (USD) | Mean fill rate | Target met on validation |",
-        "|---|---:|---:|---:|---|",
+        "| Product-location | Base stock (kg) | Mean cost (USD) | 95% CI (USD) | Mean fill rate | Target met on validation |",
+        "|---|---:|---:|---:|---:|---|",
     ]
     for row in report["lanes"]:
-        lines.append(
-            f"| {row['lane']} | {row['base_stock_kg']:,.0f} | {row['validation_mean_cost']:,.2f} | {row['validation_mean_fill_rate']:.2%} | {row['validation_target_met']} |"
+        interval = (
+            f"{row['cost_ci_low']:,.2f}–{row['cost_ci_high']:,.2f}"
+            if "cost_ci_low" in row
+            else "n/a"
         )
+        lines.append(
+            f"| {row['lane']} | {row['base_stock_kg']:,.0f} | {row['validation_mean_cost']:,.2f} | {interval} | {row['validation_mean_fill_rate']:.2%} | {row['validation_target_met']} |"
+        )
+    lines.extend(_uncertainty_lines(report, result.settings.service_target))
     lines.extend(["", *[f"- {note}" for note in report["model_notes"]], ""])
     (destination / "report.md").write_text("\n".join(lines), encoding="utf-8")
+    write_html(result, report, destination)
     manifest = {
         "completed_utc": datetime.now(timezone.utc).isoformat(),
         "application_version": __version__,
@@ -172,7 +236,7 @@ def compare_reports(paths: list[str | Path]) -> list[dict]:
             raise InputError(f"Cannot compare report {path}: {exc}") from exc
     if len(reports) < 2:
         raise InputError("Provide at least two reports")
-    return [
+    rows = [
         {
             "scenario_id": r["scenario_id"],
             "total_mean_cost": r["total_mean_cost"],
@@ -181,3 +245,29 @@ def compare_reports(paths: list[str | Path]) -> list[dict]:
         }
         for _, r in sorted(reports, key=lambda pair: pair[1]["total_mean_cost"])
     ]
+    _add_paired_differences(rows, {r["input_sha256"]: r for _, r in reports})
+    return rows
+
+
+def _add_paired_differences(rows: list[dict], reports: dict[str, dict]) -> None:
+    """Add each scenario's cost difference from the cheapest, with a paired 95% interval.
+
+    Only reports with the same seed and number of replications are paired; others get None.
+    """
+    base = reports[rows[0]["input_sha256"]]
+    base_costs = replication_costs(base)
+    base_seed = base.get("inputs", {}).get("settings", {}).get("seed")
+    for row in rows:
+        other = reports[row["input_sha256"]]
+        costs = replication_costs(other)
+        seed = other.get("inputs", {}).get("settings", {}).get("seed")
+        if (
+            base_costs is None
+            or costs is None
+            or seed != base_seed
+            or len(costs) != len(base_costs)
+        ):
+            row["cost_difference_ci_95"] = None
+            continue
+        mean, low, high = difference_interval(base_costs, costs)
+        row["cost_difference_ci_95"] = [mean, low, high]

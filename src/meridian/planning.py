@@ -1,11 +1,22 @@
 """Policy comparison and separate deterministic replenishment benchmarks."""
 
+from dataclasses import replace
 from math import ceil, sqrt
-from statistics import fmean
+from statistics import fmean, pstdev
 
 from meridian.demand import demand_traces
 from meridian.engine import simulate_lane
-from meridian.models import Candidate, InputError, Lane, LaneResult, RunResult, Settings, number
+from meridian.models import (
+    Candidate,
+    InputError,
+    Lane,
+    LaneResult,
+    PeriodResult,
+    RunResult,
+    Settings,
+    Trial,
+    number,
+)
 from stockpyl.eoq import economic_order_quantity
 from stockpyl.newsvendor import newsvendor_normal
 from stockpyl.wagner_whitin import wagner_whitin
@@ -116,3 +127,167 @@ def deterministic_plan(lane: Lane, demands: tuple[float, ...]) -> dict:
         "total_cost": float(cost),
         "assumptions": "Zero initial stock; zero lead time; known demand; no capacity limits",
     }
+
+
+FORECAST_WINDOW_DAYS = 14
+REPLAN_SAMPLES = 12
+
+
+def forecast(history: list[float], lane: Lane, settings: Settings) -> tuple[float, float]:
+    """Mean and SD of daily demand (kg) from recent history.
+
+    Falls back to the lane's configured demand (times the scenario multiplier) until at least
+    three days of history exist.
+    """
+    if len(history) < 3:
+        return (
+            lane.daily_mean_kg * settings.demand_multiplier,
+            lane.daily_sd_kg * settings.demand_multiplier,
+        )
+    return fmean(history), pstdev(history)
+
+
+def replan_level(lane: Lane, settings: Settings, mean_kg: float, sd_kg: float, seed: int) -> float:
+    """Base stock (kg) for the coming period, chosen by simulating the candidate grid.
+
+    Candidates come from the same newsvendor-centred grid as the static policy, using the
+    forecast mean and SD. Each candidate is simulated on REPLAN_SAMPLES synthetic traces drawn
+    from the forecast, and the cheapest one that meets the service target is chosen.
+    """
+    forecast_lane = replace(
+        lane,
+        daily_mean_kg=max(mean_kg, 1e-6),
+        daily_sd_kg=sd_kg,
+    )
+    trial_settings = replace(
+        settings,
+        demand_multiplier=1.0,
+        replications=REPLAN_SAMPLES,
+        horizon_days=max(lane.lead_time_days + 1, 7) * 2,
+        seed=seed,
+    )
+    traces = demand_traces(forecast_lane, trial_settings, "training")
+    candidates = []
+    for level in candidate_levels(forecast_lane, trial_settings):
+        trials = [simulate_lane(forecast_lane, level, trace) for trace in traces]
+        fill = fmean(t.fill_rate for t in trials)
+        candidates.append(
+            Candidate(
+                level, fmean(t.total_cost for t in trials), fill, fill >= settings.service_target
+            )
+        )
+    return choose_candidate(tuple(candidates)).base_stock_kg
+
+
+def rolling_plan(
+    lane: Lane,
+    settings: Settings,
+    demands: tuple[float, ...],
+    review_period_days: int = 7,
+    verbose: bool = False,
+) -> tuple[Trial, list[dict]]:
+    """Simulate one demand trace while re-optimising base stock once per review period.
+
+    At the start of each review period the policy forecasts demand from the most recent
+    FORECAST_WINDOW_DAYS days and re-optimises the base stock for that period. Event order
+    and cost conventions match simulate_lane. Returns the trial and the plan changes.
+    """
+    review_period_days = int(number(review_period_days, "review_period_days", strict=True))
+    if review_period_days > 90:
+        raise InputError("review_period_days must be between 1 and 90")
+    if not demands or len(demands) > 366:
+        raise InputError("demands must contain 1-366 daily values")
+    demands = tuple(number(x, "daily demand") for x in demands)
+    inventory_level = lane.initial_inventory_kg
+    pipeline: dict[int, float] = {}
+    periods = []
+    plan = []
+    base_stock_kg = 0.0
+    for day, demand in enumerate(demands):
+        start = max(0, day + review_period_days - FORECAST_WINDOW_DAYS)
+        mean_kg, sd_kg = forecast(list(demands[start : day + review_period_days]), lane, settings)
+        base_stock_kg = replan_level(lane, settings, mean_kg, sd_kg, (settings.seed + day) % 2**32)
+        plan.append(
+            {
+                "lane": lane.key,
+                "day": day + 1,
+                "forecast_mean_kg": mean_kg,
+                "forecast_sd_kg": sd_kg,
+                "base_stock_kg": base_stock_kg,
+            }
+        )
+        position = inventory_level + sum(pipeline.values()) - demand
+        ordered = max(0.0, base_stock_kg - position)
+        if ordered > 1e-9:
+            due = day + lane.lead_time_days
+            pipeline[due] = pipeline.get(due, 0.0) + ordered
+        else:
+            ordered = 0.0
+        received = sum(pipeline.pop(due) for due in sorted(d for d in pipeline if d <= day))
+        served = min(demand, max(0.0, inventory_level + received))
+        inventory_level += received - demand
+        periods.append(
+            PeriodResult(
+                day=day + 1,
+                demand_kg=demand,
+                inventory_kg=max(0.0, inventory_level),
+                backlog_kg=max(0.0, -inventory_level),
+                ordered_kg=ordered,
+                served_immediately_kg=served,
+                holding_cost=lane.holding_cost_per_kg_day * max(0.0, inventory_level),
+                backlog_cost=lane.backlog_cost_per_kg_day * max(0.0, -inventory_level),
+                delivery_cost=lane.delivery_cost_per_order if ordered > 1e-9 else 0.0,
+                purchase_cost=ordered * lane.purchase_cost_per_kg,
+            )
+        )
+    return Trial(lane.key, base_stock_kg, tuple(periods)), plan
+
+
+def compare_rolling(
+    lanes: tuple[Lane, ...], settings: Settings, review_period_days: int = 7
+) -> list[dict]:
+    """Static base stock versus rolling re-planning on the same validation traces, per lane."""
+    static = run_scenario(lanes, settings)
+    rows = []
+    for lane, lane_result in zip(static.lanes, static.results):
+        traces = demand_traces(lane, settings, "validation")
+        rolling = [rolling_plan(lane, settings, trace, review_period_days)[0] for trace in traces]
+        rows.append(
+            {
+                "lane": lane.key,
+                "static_base_stock_kg": lane_result.chosen_base_stock_kg,
+                "static_mean_cost": fmean(t.total_cost for t in lane_result.validation_trials),
+                "static_fill_rate": fmean(t.fill_rate for t in lane_result.validation_trials),
+                "rolling_mean_cost": fmean(t.total_cost for t in rolling),
+                "rolling_fill_rate": fmean(t.fill_rate for t in rolling),
+            }
+        )
+    return rows
+
+
+def rolling_schedule(
+    lanes: tuple[Lane, ...], settings: Settings, review_period_days: int = 7, replication: int = 1
+) -> list[dict]:
+    """The base stock in force each day for every lane, for one validation replication.
+
+    Rows carry the forecast behind each level, so planners can see how the level moved.
+    """
+    if not 1 <= replication <= settings.replications:
+        raise InputError(f"replication must be between 1 and {settings.replications}")
+    rows = []
+    for lane in sorted(lanes, key=lambda x: x.key):
+        trace = demand_traces(lane, settings, "validation")[replication - 1]
+        _, plan = rolling_plan(lane, settings, trace, review_period_days)
+        rows.extend(plan)
+    return rows
+
+
+def level_changes(schedule: list[dict]) -> list[dict]:
+    """Only the schedule rows where a lane's base stock differs from its previous day."""
+    changes = []
+    previous: dict[str, float] = {}
+    for row in schedule:
+        if previous.get(row["lane"]) != row["base_stock_kg"]:
+            changes.append(row)
+        previous[row["lane"]] = row["base_stock_kg"]
+    return changes

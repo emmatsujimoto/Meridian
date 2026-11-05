@@ -117,3 +117,9 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_cli_no_color_error_is_plain(capsys, monkeypatch):
+    monkeypatch.setattr("sys.stderr.isatty", lambda: True)
+    assert main(["--no-color", "validate", "--data", "absent.csv", "--config", "absent.json"]) == 2
+    assert "\033[" not in capsys.readouterr().err

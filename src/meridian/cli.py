@@ -4,10 +4,13 @@ import argparse
 import json
 import sys
 
+from meridian.alerts import SEVERITIES, compare_alerts, filter_alerts, load_alerts
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
+from meridian.notify import build_message, render_markdown, render_text
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
+from meridian.teams import WEBHOOK_ENV, build_card, send_alerts, webhook_url
 
 
 def parser() -> argparse.ArgumentParser:
@@ -27,7 +30,58 @@ def parser() -> argparse.ArgumentParser:
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
+    notify = commands.add_parser("notify", help="Show or send service alerts for a run")
+    notify.add_argument("summary", help="summary.json of a completed run")
+    notify.add_argument(
+        "--min-severity",
+        choices=SEVERITIES,
+        default="minor",
+        help="Leave out alerts below this severity (default: minor, all alerts)",
+    )
+    notify.add_argument(
+        "--since", help="summary.json of an earlier run; also show how alerts changed"
+    )
+    notify.add_argument(
+        "--markdown", action="store_true", help="Print Markdown instead of plain text"
+    )
+    notify.add_argument(
+        "--teams", action="store_true", help=f"Post the alerts to Teams using {WEBHOOK_ENV}"
+    )
+    notify.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="With --teams, print the Teams card as JSON instead of posting it",
+    )
+    notify.add_argument(
+        "--skip-empty",
+        action="store_true",
+        help="With --teams, do not post when there are no alerts",
+    )
     return root
+
+
+def _notify(args: argparse.Namespace) -> int:
+    """Handle ``meridian notify``."""
+    report, alerts = load_alerts(args.summary)
+    alerts = filter_alerts(alerts, args.min_severity)
+    changes = None
+    if args.since:
+        _, previous = load_alerts(args.since)
+        changes = compare_alerts(filter_alerts(previous, args.min_severity), alerts)
+    if not args.teams:
+        render = render_markdown if args.markdown else render_text
+        print(render(build_message(report, alerts), changes), end="")
+        return 0
+    if args.dry_run:
+        print(json.dumps(build_card(report, alerts, changes), indent=2))
+        return 0
+    if args.skip_empty and not alerts:
+        print("No alerts; nothing posted to Teams")
+        return 0
+    url = webhook_url()
+    status = send_alerts(report, alerts, url, changes)
+    print(f"Posted {len(alerts)} alerts to Teams (HTTP {status})")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -36,6 +90,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
             return 0
+        if args.command == "notify":
+            return _notify(args)
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)
         if args.command == "validate":

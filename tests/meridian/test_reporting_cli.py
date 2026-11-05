@@ -117,3 +117,20 @@ def test_cli_run_example(tmp_path, capsys):
     )
     assert "Results saved" in capsys.readouterr().out
     assert len(list(tmp_path.glob("*/COMPLETE.json"))) == 1
+
+
+def test_report_headers(tmp_path, lane, settings):
+    text = (export_run(run_scenario((lane,), settings), tmp_path) / "report.md").read_text()
+    assert "Mean total cost (USD): $" in text
+    assert "| Mean fill rate (%) | Target met in validation |" in text
+
+
+def test_report_header_columns_match_rows(tmp_path, lane, settings):
+    lines = (
+        (export_run(run_scenario((lane,), settings), tmp_path) / "report.md")
+        .read_text()
+        .splitlines()
+    )
+    header = next(line for line in lines if line.startswith("| Product-location"))
+    row = next(line for line in lines if line.startswith(f"| {lane.key}"))
+    assert header.count("|") == row.count("|") == 6

@@ -6,6 +6,7 @@ import sys
 
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
+from meridian.pdf_report import MAX_BUNDLES, SORT_ORDERS, write_report
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
 
@@ -27,6 +28,13 @@ def parser() -> argparse.ArgumentParser:
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
+    pdf = commands.add_parser("pdf-report", help="Write one PDF summarising several bundles")
+    pdf.add_argument("reports", nargs="+", help=f"summary.json files (up to {MAX_BUNDLES})")
+    pdf.add_argument("--output", required=True, help="PDF file to write")
+    pdf.add_argument("--title", default="Scenario comparison", help="Report title")
+    pdf.add_argument(
+        "--order", choices=SORT_ORDERS, default="given", help="Scenario order (default: given)"
+    )
     return root
 
 
@@ -35,6 +43,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
+            return 0
+        if args.command == "pdf-report":
+            path = write_report(args.reports, args.output, args.title, args.order)
+            print(f"PDF report written to {path}")
             return 0
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)

@@ -90,6 +90,7 @@ class Settings:
     demand_multiplier: float = 1.0
     service_target: float = 0.95
     stock_multipliers: tuple[float, ...] = (0.75, 1.0, 1.25, 1.5)
+    lead_time_cv: float | None = None
 
     def __post_init__(self):
         identifier(self.scenario_id, "scenario_id")
@@ -117,6 +118,11 @@ class Settings:
         if len(set(values)) != len(values):
             raise InputError("stock_multipliers must be distinct")
         object.__setattr__(self, "stock_multipliers", tuple(sorted(values)))
+        if self.lead_time_cv is not None:
+            cv = number(self.lead_time_cv, "lead_time_cv")
+            if cv > 2:
+                raise InputError("lead_time_cv must be between 0 and 2")
+            object.__setattr__(self, "lead_time_cv", cv)
 
 
 @dataclass(frozen=True)
@@ -142,6 +148,8 @@ class Trial:
     lane_key: str
     base_stock_kg: float
     periods: tuple[PeriodResult, ...]
+    # (order day, lead time in days) for each order; filled only with variable lead times.
+    order_lead_times: tuple[tuple[int, int], ...] = ()
 
     @property
     def total_cost(self) -> float:

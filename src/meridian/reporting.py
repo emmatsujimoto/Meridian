@@ -13,15 +13,22 @@ from uuid import uuid4
 
 from meridian import __version__
 from meridian.bundles import verify_bundle
+from meridian.leadtime import realised_lead_times
 from meridian.models import InputError, RunResult
 
 
 def summary(result: RunResult) -> dict:
     """Summaries use mean replicate costs and volume-weighted portfolio service."""
     rows = []
+    planned = {lane.key: lane.lead_time_days for lane in result.lanes}
     for lane_result in result.results:
         trials = lane_result.validation_trials
         costs = [t.total_cost for t in trials]
+        lead_time_stats = {}
+        if result.settings.lead_time_cv is not None:
+            lead_time_stats = realised_lead_times(
+                trials, planned[lane_result.lane_key], result.settings.horizon_days
+            )
         rows.append(
             {
                 "lane": lane_result.lane_key,
@@ -42,6 +49,7 @@ def summary(result: RunResult) -> dict:
                 ),
                 "mean_terminal_inventory_kg": fmean(t.periods[-1].inventory_kg for t in trials),
                 "mean_terminal_backlog_kg": fmean(t.periods[-1].backlog_kg for t in trials),
+                **lead_time_stats,
             }
         )
     periods = [p for lr in result.results for t in lr.validation_trials for p in t.periods]
@@ -70,8 +78,40 @@ def summary(result: RunResult) -> dict:
             "Orders charged when placed, including orders arriving after the horizon.",
             "Existing starting inventory is treated as sunk cost; no terminal salvage credit.",
             "Synthetic costs and demand; results are not operational instructions.",
+            *_lead_time_notes(result.settings.lead_time_cv),
         ],
     }
+
+
+def _lead_time_notes(lead_time_cv: float | None) -> list[str]:
+    """Model note describing the lead-time assumption, added only for variable lead times."""
+    if lead_time_cv is None:
+        return []
+    return [
+        f"Variable lead times: lognormal per order with CV {lead_time_cv:g} around each lane's "
+        "lead time, capped at the 99.9th percentile; orders may overtake each other."
+    ]
+
+
+def _lead_time_lines(report: dict, lead_time_cv: float) -> list[str]:
+    """Markdown table of realised lead times, shown when lead times are variable."""
+    lines = [
+        "",
+        f"## Lead times (variable, CV {lead_time_cv:g})",
+        "",
+        "| Product-location | Orders | Mean lead time (days) | Longest (days) | Late orders | In transit at end |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for row in report["lanes"]:
+        if not row.get("orders"):
+            lines.append(f"| {row['lane']} | 0 | - | - | - | 0 |")
+            continue
+        lines.append(
+            f"| {row['lane']} | {row['orders']} | {row['mean_realised_lead_time_days']:.1f} | "
+            f"{row['max_realised_lead_time_days']} | {row['late_order_share']:.0%} | "
+            f"{row['orders_after_horizon']} |"
+        )
+    return lines
 
 
 def _write_csv(path: Path, rows: list[dict]) -> None:
@@ -128,6 +168,8 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
         lines.append(
             f"| {row['lane']} | {row['base_stock_kg']:,.0f} | {row['validation_mean_cost']:,.2f} | {row['validation_mean_fill_rate']:.2%} | {row['validation_target_met']} |"
         )
+    if result.settings.lead_time_cv is not None:
+        lines.extend(_lead_time_lines(report, result.settings.lead_time_cv))
     lines.extend(["", *[f"- {note}" for note in report["model_notes"]], ""])
     (destination / "report.md").write_text("\n".join(lines), encoding="utf-8")
     manifest = {
@@ -177,6 +219,7 @@ def compare_reports(paths: list[str | Path]) -> list[dict]:
             "scenario_id": r["scenario_id"],
             "total_mean_cost": r["total_mean_cost"],
             "portfolio_fill_rate": r["portfolio_fill_rate"],
+            "lead_time_cv": r.get("inputs", {}).get("settings", {}).get("lead_time_cv"),
             "input_sha256": r["input_sha256"],
         }
         for _, r in sorted(reports, key=lambda pair: pair[1]["total_mean_cost"])

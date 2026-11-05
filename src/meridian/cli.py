@@ -8,6 +8,7 @@ from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
+from meridian.trucks import deliveries_from_result, load_routes, plan_trucks, savings, write_trips
 
 
 def parser() -> argparse.ArgumentParser:
@@ -17,10 +18,17 @@ def parser() -> argparse.ArgumentParser:
         ("validate", "Validate input files without running models"),
         ("run", "Compare policies and export independent validation results"),
         ("benchmark", "Calculate EOQ and deterministic lot-sizing benchmarks"),
+        ("trucks", "Combine same-day deliveries on a route into shared trucks"),
     ):
         command = commands.add_parser(name, help=help_text)
         command.add_argument("--data", required=True, help="Synthetic product-location CSV")
         command.add_argument("--config", required=True, help="Scenario JSON")
+        if name == "trucks":
+            command.add_argument("--routes", required=True, help="Routes and truck capacities JSON")
+            command.add_argument("--output", default="results", help="Folder for trucks.csv")
+            command.add_argument(
+                "--replication", type=int, default=1, help="Validation replication to plan"
+            )
         if name == "run":
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
@@ -51,6 +59,18 @@ def main(argv: list[str] | None = None) -> int:
                     }
                 )
             print(json.dumps(rows, indent=2, allow_nan=False))
+        elif args.command == "trucks":
+            routes = load_routes(args.routes)
+            deliveries = deliveries_from_result(run_scenario(lanes, settings), args.replication)
+            trips = plan_trucks(deliveries, routes)
+            path = write_trips(trips, args.output)
+            totals = savings(deliveries, trips, routes)
+            print(
+                f"{totals['deliveries']} deliveries in {totals['trips']} trips; mean truck fill "
+                f"{totals['mean_utilisation']:.0%}; delivery cost ${totals['separate_delivery_cost']:,.0f} "
+                f"separately vs ${totals['combined_trip_cost']:,.0f} combined"
+            )
+            print(f"Truck plan saved to {path}")
         else:
             result = run_scenario(lanes, settings)
             destination = export_run(result, args.output)

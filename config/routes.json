@@ -1,0 +1,12 @@
+{
+  "truck_capacity_t": {
+    "nitrogen": 20,
+    "oxygen": 20,
+    "argon": 18
+  },
+  "trip_cost": 110,
+  "routes": [
+    {"route_id": "Coastal", "sites": ["Harbor", "Summit"]},
+    {"route_id": "Inland", "sites": ["Meadow"]}
+  ]
+}

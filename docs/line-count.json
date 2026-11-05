@@ -2,15 +2,15 @@
   "method": "Python token-bearing physical lines excluding docstrings, comments and blanks",
   "target_code_lines": 8500,
   "totals": {
-    "files": 41,
-    "physical": 20825,
-    "code": 8500
+    "files": 44,
+    "physical": 21956,
+    "code": 9332
   },
   "groups": {
     "application": {
-      "files": 10,
-      "physical": 802,
-      "code": 664
+      "files": 11,
+      "physical": 1275,
+      "code": 1046
     },
     "upstream_source": {
       "files": 16,
@@ -23,9 +23,9 @@
       "code": 2897
     },
     "application_tests": {
-      "files": 6,
-      "physical": 727,
-      "code": 545
+      "files": 8,
+      "physical": 1385,
+      "code": 995
     },
     "maintenance_scripts": {
       "files": 2,
@@ -51,13 +51,18 @@
     },
     "src/meridian/cli.py": {
       "group": "application",
-      "physical": 65,
-      "code": 56
+      "physical": 171,
+      "code": 156
     },
     "src/meridian/demand.py": {
       "group": "application",
       "physical": 31,
       "code": 20
+    },
+    "src/meridian/disruptions.py": {
+      "group": "application",
+      "physical": 206,
+      "code": 156
     },
     "src/meridian/engine.py": {
       "group": "application",
@@ -71,18 +76,18 @@
     },
     "src/meridian/models.py": {
       "group": "application",
-      "physical": 177,
-      "code": 139
+      "physical": 184,
+      "code": 146
     },
     "src/meridian/planning.py": {
       "group": "application",
-      "physical": 118,
-      "code": 93
+      "physical": 260,
+      "code": 203
     },
     "src/meridian/reporting.py": {
       "group": "application",
-      "physical": 183,
-      "code": 169
+      "physical": 195,
+      "code": 178
     },
     "src/stockpyl/__init__.py": {
       "group": "upstream_source",
@@ -178,6 +183,16 @@
       "group": "application_tests",
       "physical": 132,
       "code": 99
+    },
+    "tests/meridian/test_disruption_scenarios.py": {
+      "group": "application_tests",
+      "physical": 381,
+      "code": 264
+    },
+    "tests/meridian/test_disruptions.py": {
+      "group": "application_tests",
+      "physical": 277,
+      "code": 186
     },
     "tests/meridian/test_edge_cases.py": {
       "group": "application_tests",

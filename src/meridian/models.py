@@ -90,9 +90,16 @@ class Settings:
     demand_multiplier: float = 1.0
     service_target: float = 0.95
     stock_multipliers: tuple[float, ...] = (0.75, 1.0, 1.25, 1.5)
+    supplier_disruptions: bool = False
+    max_outage_days: int = 5
 
     def __post_init__(self):
         identifier(self.scenario_id, "scenario_id")
+        if not isinstance(self.supplier_disruptions, bool):
+            raise InputError("supplier_disruptions must be true or false")
+        object.__setattr__(
+            self, "max_outage_days", integer(self.max_outage_days, "max_outage_days", 1, 60)
+        )
         for field, lower, upper in (
             ("horizon_days", 1, 366),
             ("replications", 1, 100),

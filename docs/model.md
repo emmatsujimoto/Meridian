@@ -33,6 +33,23 @@ USD is the common currency and kg is the common quantity unit.
   sunk asset, and no terminal inventory salvage value is credited.
 - Ending inventory and backlog are reported so boundary effects remain visible.
 
+## Days of cover versus lead time
+
+`report.md` ends with a table comparing each lane's chosen stock level with its
+replenishment lead time:
+
+- *Days of cover* is the chosen base-stock level divided by mean daily demand, after the
+  scenario's demand multiplier. It is the number of average days the full stock level
+  would last with no deliveries.
+- *Cover ratio* is days of cover divided by the lead time in days.
+- *Status* is `below lead time` when the ratio is under 1, `tight` from 1 to 1.5 and
+  `comfortable` from 1.5. A tight lane that also missed the service target in training is
+  marked `tight; target missed in training`.
+
+A ratio below one does not mean the lane runs out every cycle: the base-stock level
+includes stock already on order. It does flag lanes where a single late delivery leaves
+little protection, which are worth checking against the fill-rate results.
+
 ## Policy choice and validation
 
 A normal newsvendor approximation to protection-period demand centers a finite

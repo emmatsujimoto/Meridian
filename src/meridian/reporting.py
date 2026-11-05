@@ -16,6 +16,17 @@ from meridian.bundles import verify_bundle
 from meridian.models import InputError, RunResult
 
 
+def _disruption_notes(settings) -> list[str]:
+    """Model notes describing supplier outages, when the scenario enables them."""
+    if not settings.supplier_disruptions:
+        return []
+    return [
+        "Random supplier outages of up to "
+        f"{settings.max_outage_days} days block new orders; shipped deliveries still arrive.",
+        "Outage schedules are drawn per lane, phase and replication from the scenario seed.",
+    ]
+
+
 def summary(result: RunResult) -> dict:
     """Summaries use mean replicate costs and volume-weighted portfolio service."""
     rows = []
@@ -70,6 +81,7 @@ def summary(result: RunResult) -> dict:
             "Orders charged when placed, including orders arriving after the horizon.",
             "Existing starting inventory is treated as sunk cost; no terminal salvage credit.",
             "Synthetic costs and demand; results are not operational instructions.",
+            *_disruption_notes(result.settings),
         ],
     }
 

@@ -83,6 +83,41 @@ def _write_csv(path: Path, rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
+ADDITIVE_FIELDS = (
+    "base_stock_kg",
+    "validation_mean_cost",
+    "mean_holding_cost",
+    "mean_backlog_cost",
+    "mean_delivery_cost",
+    "mean_purchase_cost",
+    "mean_terminal_inventory_kg",
+    "mean_terminal_backlog_kg",
+)
+
+
+def total_row(report: dict) -> dict:
+    """A lanes.csv row adding up the additive columns across every product-location.
+
+    Fill rate is the volume-weighted portfolio fill rate. Columns that cannot be added,
+    such as the cost standard deviation, are left empty.
+    """
+    totRow = {key: "" for key in report["lanes"][0]}
+    totRow["lane"] = "TOTAL"
+    for field in ADDITIVE_FIELDS:
+        totRow[field] = sum(row[field] for row in report["lanes"])
+    target = report["inputs"]["settings"]["service_target"]
+    totRow["training_target_met"] = all(row["training_target_met"] for row in report["lanes"])
+    totRow["validation_mean_fill_rate"] = report["portfolio_fill_rate"]
+    totRow["validation_target_met"] = report["portfolio_fill_rate"] >= target
+    return totRow
+
+
+def read_lanes_csv(path: str | Path) -> list[dict]:
+    """Per-lane rows of a bundle's lanes.csv, without the TOTAL row."""
+    with Path(path).open(newline="", encoding="utf-8") as stream:
+        return [row for row in csv.DictReader(stream) if row["lane"] != "TOTAL"]
+
+
 def export_run(result: RunResult, output_root: str | Path) -> Path:
     """Create a unique bundle. COMPLETE.json is written only after all exports succeed."""
     root = Path(output_root).resolve()
@@ -94,7 +129,8 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
     (destination / "summary.json").write_text(
         json.dumps(report, indent=2, allow_nan=False) + "\n", encoding="utf-8"
     )
-    _write_csv(destination / "lanes.csv", report["lanes"])
+    lane_rows = [*report["lanes"], total_row(report)]
+    _write_csv(destination / "lanes.csv", lane_rows)
     candidates = []
     traces = []
     for lane_result in result.results:
@@ -120,6 +156,8 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
         f"Horizon: {result.settings.horizon_days} days. Replications: {result.settings.replications}.",
         f"Mean total cost: ${report['total_mean_cost']:,.2f}.",
         f"Volume-weighted immediate fill rate: {report['portfolio_fill_rate']:.2%}.",
+        "Mean product-location fill rate: "
+        f"{fmean(row['validation_mean_fill_rate'] for row in lane_rows):.2%}.",
         "",
         "| Product-location | Base stock (kg) | Mean cost (USD) | Mean fill rate | Target met on validation |",
         "|---|---:|---:|---:|---|",
@@ -128,6 +166,10 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
         lines.append(
             f"| {row['lane']} | {row['base_stock_kg']:,.0f} | {row['validation_mean_cost']:,.2f} | {row['validation_mean_fill_rate']:.2%} | {row['validation_target_met']} |"
         )
+    lines.append(
+        f"| TOTAL | {lane_rows[-1]['base_stock_kg']:,.0f} | {report['total_mean_cost']:,.2f} "
+        f"| {report['portfolio_fill_rate']:.2%} | {lane_rows[-1]['validation_target_met']} |"
+    )
     lines.extend(["", *[f"- {note}" for note in report["model_notes"]], ""])
     (destination / "report.md").write_text("\n".join(lines), encoding="utf-8")
     manifest = {

@@ -4,14 +4,18 @@ import argparse
 import json
 import sys
 
+from meridian import __version__
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
 
+VERSION_TEXT = f"Meridian gas planner {__version__}"
+
 
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description="Synthetic industrial-gas inventory planning")
+    root.add_argument("-V", "--version", action="version", version=f"%(prog)s {__version__}")
     commands = root.add_subparsers(dest="command", required=True)
     for name, help_text in (
         ("validate", "Validate input files without running models"),

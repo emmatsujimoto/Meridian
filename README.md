@@ -53,7 +53,11 @@ increase, use `config/higher_demand.json`.
 ```bash
 python -m meridian benchmark --data data/synthetic_sites.csv --config config/quickstart.json
 python -m meridian compare results/<run-one>/summary.json results/<run-two>/summary.json
+python -m meridian snapshot-diff results/<run-one>/summary.json results/<run-two>/summary.json
 ```
+
+`snapshot-diff` shows how ending inventory and backlog changed for each product-location
+between two runs. See [docs/snapshots.md](docs/snapshots.md) for options and output formats.
 
 The `benchmark` command provides EOQ and Wagner-Whitin calculations. They have
 different assumptions from the stochastic simulation and are labeled separately.
@@ -68,6 +72,7 @@ different assumptions from the stochastic simulation and are labeled separately.
 | `src/meridian/engine.py` | Adapter to the Stockpyl inventory simulator |
 | `src/meridian/planning.py` | Candidate selection, EOQ and deterministic lot-sizing benchmarks |
 | `src/meridian/reporting.py` | Cost summaries, CSV/JSON exports and scenario comparison |
+| `src/meridian/snapshots.py` | End-of-horizon inventory comparison between two result bundles |
 | `src/meridian/cli.py` | Local command-line interface |
 | `src/stockpyl/` | Selected upstream inventory algorithms and their required network objects |
 | `data/` | Six fictional product-location input rows |

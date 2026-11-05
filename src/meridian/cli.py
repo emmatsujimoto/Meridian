@@ -4,10 +4,22 @@ import argparse
 import json
 import sys
 
+from meridian.bundles import list_bundles
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
+
+
+def positive_int(text: str) -> int:
+    """argparse type for a whole number of at least 1."""
+    try:
+        value = int(text)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a whole number") from exc
+    if value < 1:
+        raise argparse.ArgumentTypeError("must be at least 1")
+    return value
 
 
 def parser() -> argparse.ArgumentParser:
@@ -25,6 +37,9 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
             )
+    listing = commands.add_parser("list", help="List completed result bundles, most recent first")
+    listing.add_argument("--output", default="results", help="Folder holding result bundles")
+    listing.add_argument("--limit", type=positive_int, help="Show only the N most recent bundles")
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
     return root
@@ -35,6 +50,11 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
+            return 0
+        if args.command == "list":
+            for entry in list_bundles(args.output, args.limit):
+                completed = entry["completed_utc"].strftime("%Y-%m-%d %H:%M")
+                print(f"{completed} UTC  {entry['bundle']}  {entry['scenario_id']}")
             return 0
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)

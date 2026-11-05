@@ -100,8 +100,8 @@ def deterministic_plan(lane: Lane, demands: tuple[float, ...]) -> dict:
 
     This is a separate full-information benchmark, not a forecast or live dispatch plan.
     """
-    if not demands or len(demands) > 366:
-        raise InputError("demands must contain 1-366 days")
+    if not demands or len(demands) > 3650:
+        raise InputError("demands must contain 1-3650 days")
     demand = [number(x, "demand") for x in demands]
     quantities, cost, _, _ = wagner_whitin(
         len(demand),

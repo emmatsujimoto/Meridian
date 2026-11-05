@@ -94,7 +94,7 @@ class Settings:
     def __post_init__(self):
         identifier(self.scenario_id, "scenario_id")
         for field, lower, upper in (
-            ("horizon_days", 1, 366),
+            ("horizon_days", 1, 3650),
             ("replications", 1, 100),
             ("seed", 0, 2**32 - 1),
         ):

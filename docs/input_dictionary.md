@@ -28,7 +28,7 @@ not cylinder counts or standard gas volumes; no density conversion is performed.
 | Field | Default | Meaning |
 |---|---|---|
 | scenario_id | baseline | Safe name used in report labels |
-| horizon_days | 60 | Number of simulated days, 1–366 |
+| horizon_days | 60 | Number of simulated days, 1–3650 (ten years); longer horizons are rejected |
 | replications | 4 | Training and validation replications each, 1–100 |
 | seed | 254 | Reproducibility seed, 0 through 2^32−1 |
 | demand_multiplier | 1.0 | Positive multiplier applied to both demand mean and SD |

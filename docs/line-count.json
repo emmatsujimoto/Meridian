@@ -2,15 +2,15 @@
   "method": "Python token-bearing physical lines excluding docstrings, comments and blanks",
   "target_code_lines": 8500,
   "totals": {
-    "files": 41,
-    "physical": 20825,
-    "code": 8500
+    "files": 42,
+    "physical": 20956,
+    "code": 8598
   },
   "groups": {
     "application": {
       "files": 10,
-      "physical": 802,
-      "code": 664
+      "physical": 862,
+      "code": 714
     },
     "upstream_source": {
       "files": 16,
@@ -23,9 +23,9 @@
       "code": 2897
     },
     "application_tests": {
-      "files": 6,
-      "physical": 727,
-      "code": 545
+      "files": 7,
+      "physical": 798,
+      "code": 593
     },
     "maintenance_scripts": {
       "files": 2,
@@ -81,8 +81,8 @@
     },
     "src/meridian/reporting.py": {
       "group": "application",
-      "physical": 183,
-      "code": 169
+      "physical": 243,
+      "code": 219
     },
     "src/stockpyl/__init__.py": {
       "group": "upstream_source",
@@ -183,6 +183,11 @@
       "group": "application_tests",
       "physical": 132,
       "code": 98
+    },
+    "tests/meridian/test_heatmap.py": {
+      "group": "application_tests",
+      "physical": 71,
+      "code": 48
     },
     "tests/meridian/test_models_inputs.py": {
       "group": "application_tests",

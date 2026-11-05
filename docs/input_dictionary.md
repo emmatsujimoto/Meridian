@@ -42,6 +42,12 @@ Unknown and duplicate JSON keys are rejected. Configurations are data, never exe
 - `report.md`: concise human-readable comparison and assumptions.
 - `summary.json`: scenario inputs, input fingerprint, per-lane results and totals.
 - `lanes.csv`: selected stocks, service outcomes, cost components and terminal positions.
+  The last row, labelled `TOTAL`, adds up base stock, mean costs and terminal positions
+  across all product-locations. Its fill rate is the volume-weighted portfolio fill rate,
+  and `validation_target_met` compares that rate with the service target. Its cost
+  standard deviation is left empty because standard deviations cannot be added. Per-lane
+  rows are unchanged; use `meridian.reporting.read_lanes_csv` to read them without the
+  total, or filter out the `TOTAL` row when loading the file in a spreadsheet.
 - `candidates.csv`: all training candidate costs, fill rates and target outcomes.
 - `daily_results.csv`: validation daily quantities and costs for every lane and replicate.
 - `COMPLETE.json`: software versions and SHA-256 hashes of the completed result files.

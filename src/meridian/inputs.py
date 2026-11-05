@@ -3,9 +3,14 @@
 import csv
 import json
 from dataclasses import fields
+from importlib import resources
 from pathlib import Path
 
+import jsonschema
+
 from meridian.models import InputError, Lane, Settings
+
+SCHEMA_FILE = "schema/settings.schema.json"
 
 
 def _unique_pairs(pairs):
@@ -17,6 +22,14 @@ def _unique_pairs(pairs):
     return result
 
 
+def validate_schema(data: dict) -> None:
+    version = data.get("schema_version", "2026-10")
+    if version != "2026-10":
+        raise InputError(f"Unsupported settings schema_version {version!r}; expected '2026-10'")
+    schema = json.loads(resources.files("meridian").joinpath(SCHEMA_FILE).read_text("utf-8"))
+    jsonschema.validate(data, schema)
+
+
 def load_settings(path: str | Path) -> Settings:
     try:
         text = Path(path).read_text(encoding="utf-8-sig")
@@ -25,10 +38,11 @@ def load_settings(path: str | Path) -> Settings:
         raise InputError(f"Cannot read settings {path}: {exc}") from exc
     if not isinstance(data, dict):
         raise InputError("Settings must be a JSON object")
-    unknown = set(data) - {f.name for f in fields(Settings)}
+    unknown = set(data) - {f.name for f in fields(Settings)} - {"schema_version"}
     if unknown:
         raise InputError(f"Unknown settings: {', '.join(sorted(unknown))}")
-    return Settings(**data)
+    validate_schema(data)
+    return Settings(**{key: value for key, value in data.items() if key != "schema_version"})
 
 
 def load_lanes(path: str | Path) -> tuple[Lane, ...]:

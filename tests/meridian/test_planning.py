@@ -87,7 +87,7 @@ def test_rng_state_is_preserved(lane):
     assert before[2:] == after[2:]
 
 
-@pytest.mark.parametrize("demands", [(), (-1,), (float("nan"),), (1,) * 367])
+@pytest.mark.parametrize("demands", [(), (-1,), (float("nan"),), (1,) * 3651])
 def test_simulation_rejects_invalid_demands(lane, demands):
     with pytest.raises(InputError):
         simulate_lane(lane, 20, demands)

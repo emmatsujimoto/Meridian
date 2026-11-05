@@ -54,7 +54,7 @@ def validate_report(report: dict) -> dict:
     if report.get("schema_version") != 1:
         raise InputError("Unsupported report schema")
     identifier(report.get("scenario_id"), "scenario_id")
-    integer(report.get("horizon_days"), "horizon_days", 1, 366)
+    integer(report.get("horizon_days"), "horizon_days", 1, 3650)
     if report.get("currency") != "USD" or report.get("quantity_unit") != "kg":
         raise InputError("Reports must use USD and kg")
     if not isinstance(report.get("input_sha256"), str) or not re.fullmatch(

@@ -57,7 +57,7 @@ def test_invalid_lane(lane, field, value):
     "field,value",
     [
         ("horizon_days", 0),
-        ("horizon_days", 367),
+        ("horizon_days", 3651),
         ("replications", 0),
         ("seed", -1),
         ("demand_multiplier", 0),

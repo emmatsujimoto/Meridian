@@ -20,8 +20,8 @@ def simulate_lane(lane: Lane, base_stock_kg: float, demands: tuple[float, ...]) 
     salvage value is applied. These conventions are explicit modeling assumptions.
     """
     base_stock_kg = number(base_stock_kg, "base_stock_kg")
-    if not demands or len(demands) > 366:
-        raise InputError("demands must contain 1-366 daily values")
+    if not demands or len(demands) > 3650:
+        raise InputError("demands must contain 1-3650 daily values")
     demands = tuple(number(x, "daily demand") for x in demands)
     network = single_stage_system(
         index=0,

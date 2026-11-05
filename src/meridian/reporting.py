@@ -151,7 +151,43 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
     return destination
 
 
-def compare_reports(paths: list[str | Path]) -> list[dict]:
+PRODUCT_FAMILIES = ("nitrogen", "oxygen", "argon")
+
+
+def _family_totals(report: dict, families: tuple[str, ...]) -> dict:
+    """Mean cost (USD) and mean lane fill rate of the selected product families.
+
+    The fill rate is the unweighted mean of the selected lanes' validation fill rates,
+    because summary.json does not store demand volumes per lane.
+    """
+    costs = []
+    fills = []
+    for row in report["lanes"]:
+        product = row["lane"].split(":")[1]
+        if product in families:
+            if row["validation_mean_cost"] is not None:
+                if row["validation_mean_fill_rate"] is not None:
+                    costs.append(row["validation_mean_cost"])
+                    fills.append(row["validation_mean_fill_rate"])
+    return {
+        "lanes": len(costs),
+        "total_mean_cost": sum(costs),
+        "mean_lane_fill_rate": sum(fills) / len(fills) if fills else None,
+    }
+
+
+def compare_families(paths: list[str | Path], families: list[str]) -> list[dict]:
+    """Compare reports on the selected product families only, lowest cost first."""
+    selected = tuple(dict.fromkeys(families))
+    rows = []
+    for entry in compare_reports(paths, keep_reports=True):
+        totals = _family_totals(entry.pop("report"), selected)
+        if totals["lanes"]:
+            rows.append({**entry, "families": list(selected), **totals})
+    return sorted(rows, key=lambda row: row["total_mean_cost"])
+
+
+def compare_reports(paths: list[str | Path], keep_reports: bool = False) -> list[dict]:
     """Compare only reports with the same cost horizon, currency and lane portfolio."""
     reports = []
     for path in paths:
@@ -178,6 +214,7 @@ def compare_reports(paths: list[str | Path]) -> list[dict]:
             "total_mean_cost": r["total_mean_cost"],
             "portfolio_fill_rate": r["portfolio_fill_rate"],
             "input_sha256": r["input_sha256"],
+            **({"report": r} if keep_reports else {}),
         }
         for _, r in sorted(reports, key=lambda pair: pair[1]["total_mean_cost"])
     ]

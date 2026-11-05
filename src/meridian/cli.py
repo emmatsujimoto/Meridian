@@ -8,6 +8,7 @@ from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
+from meridian.templates import describe_templates, template_names, write_scenario
 
 
 def parser() -> argparse.ArgumentParser:
@@ -27,7 +28,46 @@ def parser() -> argparse.ArgumentParser:
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
+    new = commands.add_parser("new-scenario", help="Write starter scenario files to edit")
+    new.add_argument("scenario_id", nargs="?", help="Name of the new scenario")
+    new.add_argument(
+        "--template",
+        default="quickstart",
+        choices=template_names(),
+        help="Starting point (default: quickstart)",
+    )
+    new.add_argument("--folder", default=".", help="Where to write the files (default: .)")
+    new.add_argument("--horizon", type=int, help="Override the template's horizon_days")
+    new.add_argument("--replications", type=int, help="Override the template's replications")
+    new.add_argument("--force", action="store_true", help="Replace files that already exist")
+    new.add_argument("--list", action="store_true", help="List the available templates")
     return root
+
+
+def _new_scenario(args: argparse.Namespace) -> int:
+    """Handle ``meridian new-scenario``."""
+    if args.list:
+        for row in describe_templates():
+            print(
+                f"{row['name']:<12} {row['lanes']} lanes, {row['horizon_days']} days. "
+                f"{row['description']}"
+            )
+        return 0
+    if not args.scenario_id:
+        print("Provide a scenario name, or --list to see templates", file=sys.stderr)
+        return 2
+    overrides = {
+        key: value
+        for key, value in (("horizon_days", args.horizon), ("replications", args.replications))
+        if value is not None
+    }
+    written = write_scenario(args.scenario_id, args.folder, args.template, args.force, overrides)
+    for path in written["replaced"]:
+        print(f"Replaced {path}")
+    print(f"Settings: {written['settings']}")
+    print(f"Lanes:    {written['lanes']}")
+    print(f"Next: meridian validate --data {written['lanes']} --config {written['settings']}")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -36,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
             return 0
+        if args.command == "new-scenario":
+            return _new_scenario(args)
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)
         if args.command == "validate":

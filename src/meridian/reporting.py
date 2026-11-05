@@ -74,6 +74,65 @@ def summary(result: RunResult) -> dict:
     }
 
 
+HEATMAP_PRODUCTS = ("nitrogen", "oxygen", "argon")
+
+
+def heatmap_lines(report: dict) -> list[str]:
+    sites = sorted({row["lane"].split(":")[0] for row in report["lanes"]})
+    fill = {
+        tuple(row["lane"].split(":")): row["validation_mean_fill_rate"] for row in report["lanes"]
+    }
+    lines = [
+        "",
+        "## Service by site and product",
+        "",
+        "Validation fill rate. ✅ meets the target, ⚠️ within 5 points below it, ❌ further below.",
+        "",
+        "| Site | " + " | ".join(product.capitalize() for product in HEATMAP_PRODUCTS) + " |",
+        "|---|" + "---:|" * len(HEATMAP_PRODUCTS),
+    ]
+    for site in sites:
+        cells = []
+        for product in HEATMAP_PRODUCTS:
+            rate = fill.get((site, product))
+            if rate is None:
+                cells.append("–")
+            elif rate >= 0.95:
+                cells.append(f"{rate:.2%} ✅")
+            elif rate >= 0.90:
+                cells.append(f"{rate:.2%} ⚠️")
+            else:
+                cells.append(f"{rate:.2%} ❌")
+        lines.append(f"| {site} | " + " | ".join(cells) + " |")
+    counts = heatmap_counts(cells_by_lane(lines))
+    lines.extend(
+        [
+            "",
+            f"{counts['meets']} product-locations meet the target, {counts['near']} are within "
+            f"5 points of it and {counts['below']} are further below.",
+        ]
+    )
+    return lines
+
+
+def cells_by_lane(lines: list[str]) -> list[str]:
+    """Heatmap cell texts (one per product-location present), read from the table rows."""
+    cells = []
+    for line in lines:
+        if line.startswith("| ") and not line.startswith("| Site"):
+            cells.extend(cell.strip() for cell in line.strip("|").split("|")[1:])
+    return [cell for cell in cells if cell != "–"]
+
+
+def heatmap_counts(cells: list[str]) -> dict[str, int]:
+    """Number of heatmap cells in each band, from their markers."""
+    return {
+        "meets": sum("✅" in cell for cell in cells),
+        "near": sum("⚠️" in cell for cell in cells),
+        "below": sum("❌" in cell for cell in cells),
+    }
+
+
 def _write_csv(path: Path, rows: list[dict]) -> None:
     if not rows:
         raise InputError("Cannot export an empty result table")
@@ -128,6 +187,7 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
         lines.append(
             f"| {row['lane']} | {row['base_stock_kg']:,.0f} | {row['validation_mean_cost']:,.2f} | {row['validation_mean_fill_rate']:.2%} | {row['validation_target_met']} |"
         )
+    lines.extend(heatmap_lines(report))
     lines.extend(["", *[f"- {note}" for note in report["model_notes"]], ""])
     (destination / "report.md").write_text("\n".join(lines), encoding="utf-8")
     manifest = {

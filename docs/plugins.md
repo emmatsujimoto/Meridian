@@ -44,6 +44,7 @@ python -m meridian models --json
 | `normal` | Normal, negative draws set to zero | Yes | Clipping raises the mean slightly when the deviation is large |
 | `gamma` | Gamma | Yes | Mean and deviation match the inputs |
 | `poisson` | Poisson | No | Whole kilograms; variance equals the mean |
+| `uniform` | Uniform, negative draws set to zero | Yes | Bounded demand; mean and deviation match the inputs until clipping applies |
 | `constant` | None | No | The daily mean every day; useful for checking costs by hand |
 
 For every model the scenario's `demand_multiplier` scales both the mean and the standard
@@ -52,6 +53,41 @@ for the lognormal, normal and gamma models.
 
 Draws are seeded from the scenario seed, the product-location and the phase (training or
 validation), so a model always produces the same demand for the same inputs.
+
+## Previewing a model
+
+Before running a full scenario, `meridian models --preview` shows what a model's draws look
+like for a single product-location. It draws one year of demand for 20 replications from a
+fixed seed and prints the mean, standard deviation, 5th/50th/95th percentiles and the share
+of days with zero demand:
+
+```bash
+python -m meridian models --preview gamma lognormal --mean 120 --sd 45
+```
+
+```text
+model               mean        sd       p05       p50       p95    zero
+--------------------------------------------------------------------------
+gamma              120.1      44.9      56.4     112.6     202.8    0.0%
+lognormal          119.8      45.2      60.9     112.2     203.6    0.0%
+```
+
+With no model names, every available model is previewed, including plugins. Add `--json`
+for machine-readable output and `--days` to change the number of days drawn (1-366).
+
+Preview numbers come from a fixed seed, not from a scenario's seed, so they are the same on
+every run and do not match any particular scenario's demand exactly.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--mean` | 100 | Daily mean demand in kg |
+| `--sd` | 20 | Daily standard deviation in kg |
+| `--days` | 365 | Days drawn per replication |
+| `--json` | off | Print a JSON list instead of a table |
+
+A preview is a quick way to check a plugin: the mean and deviation should be close to the
+values requested unless the model deliberately changes them, and `zero` shows how often the
+model produces days without demand.
 
 ## Writing a plugin
 

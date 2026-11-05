@@ -71,7 +71,9 @@ def test_get_built_in():
 
 
 def test_unknown_model_lists_choices():
-    with pytest.raises(InputError, match="available: constant, gamma, lognormal"):
+    with pytest.raises(
+        InputError, match="available: constant, gamma, lognormal, normal, poisson, uniform"
+    ):
         getModel("weibull")
 
 

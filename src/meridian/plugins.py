@@ -59,6 +59,12 @@ def _poisson(rng: np.random.Generator, mean: float, sd: float, shape) -> np.ndar
     return rng.poisson(mean, size=shape).astype(float)
 
 
+def _uniform(rng: np.random.Generator, mean: float, sd: float, shape) -> np.ndarray:
+    """Uniform draws with matching mean and deviation, negative draws set to zero."""
+    half_width = sqrt(3.0) * sd
+    return np.maximum(rng.uniform(mean - half_width, mean + half_width, size=shape), 0.0)
+
+
 def _constant(rng: np.random.Generator, mean: float, sd: float, shape) -> np.ndarray:
     """The daily mean every day, ignoring the standard deviation."""
     return np.full(shape, mean)
@@ -69,6 +75,7 @@ BUILT_IN_MODELS = (
     DemandModel("normal", _normal, "Normal with negative draws set to zero"),
     DemandModel("gamma", _gamma, "Gamma with matching mean and deviation"),
     DemandModel("poisson", _poisson, "Poisson counts of whole kilograms; ignores deviation"),
+    DemandModel("uniform", _uniform, "Uniform with matching mean and deviation, floored at zero"),
     DemandModel("constant", _constant, "Daily mean every day; useful for checks"),
 )
 
@@ -191,3 +198,51 @@ def draw(
     if np.any(samples < 0):
         raise InputError(f"Demand model {model.name} returned negative demand")
     return samples
+
+
+def model_statistics(
+    model: DemandModel,
+    mean: float,
+    sd: float,
+    days: int = 365,
+    replications: int = 20,
+    seed: int = 0,
+) -> dict:
+    """Summary statistics of a model's draws, for checking a model before using it.
+
+    Draws come from a fixed seed so the same request always gives the same numbers.
+    """
+    if mean <= 0 or sd < 0:
+        raise InputError("Preview needs a positive mean and a nonnegative deviation")
+    if not 1 <= days <= 366 or not 1 <= replications <= 100:
+        raise InputError("Preview needs 1-366 days and 1-100 replications")
+    samples = draw(model, np.random.default_rng(seed), mean, sd, (replications, days))
+    return {
+        "name": model.name,
+        "mean": float(samples.mean()),
+        "sd": float(samples.std()),
+        "p05": float(np.percentile(samples, 5)),
+        "p50": float(np.percentile(samples, 50)),
+        "p95": float(np.percentile(samples, 95)),
+        "zero_share": float(np.mean(samples == 0)),
+    }
+
+
+def preview_models(
+    names: list[str] | None, mean: float, sd: float, days: int = 365, seed: int = 0
+) -> list[dict]:
+    """Statistics for the named models, or for every available model when none are named."""
+    models = available_models() if not names else [getModel(name) for name in names]
+    return [model_statistics(model, mean, sd, days=days, seed=seed) for model in models]
+
+
+def preview_table(rows: list[dict]) -> str:
+    """A fixed-width table of preview statistics."""
+    header = f"{'model':<14}{'mean':>10}{'sd':>10}{'p05':>10}{'p50':>10}{'p95':>10}{'zero':>8}"
+    lines = [header, "-" * len(header)]
+    for row in rows:
+        lines.append(
+            f"{row['name']:<14}{row['mean']:>10.1f}{row['sd']:>10.1f}{row['p05']:>10.1f}"
+            f"{row['p50']:>10.1f}{row['p95']:>10.1f}{row['zero_share']:>8.1%}"
+        )
+    return "\n".join(lines)

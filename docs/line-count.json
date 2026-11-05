@@ -3,14 +3,14 @@
   "target_code_lines": 8500,
   "totals": {
     "files": 44,
-    "physical": 21378,
-    "code": 8872
+    "physical": 21531,
+    "code": 8984
   },
   "groups": {
     "application": {
       "files": 11,
-      "physical": 1017,
-      "code": 806
+      "physical": 1085,
+      "code": 859
     },
     "upstream_source": {
       "files": 16,
@@ -24,8 +24,8 @@
     },
     "application_tests": {
       "files": 8,
-      "physical": 1065,
-      "code": 775
+      "physical": 1150,
+      "code": 834
     },
     "maintenance_scripts": {
       "files": 2,
@@ -51,8 +51,8 @@
     },
     "src/meridian/cli.py": {
       "group": "application",
-      "physical": 89,
-      "code": 77
+      "physical": 102,
+      "code": 90
     },
     "src/meridian/demand.py": {
       "group": "application",
@@ -81,8 +81,8 @@
     },
     "src/meridian/plugins.py": {
       "group": "application",
-      "physical": 193,
-      "code": 125
+      "physical": 248,
+      "code": 165
     },
     "src/meridian/reporting.py": {
       "group": "application",
@@ -186,8 +186,8 @@
     },
     "tests/meridian/test_demand_models.py": {
       "group": "application_tests",
-      "physical": 124,
-      "code": 81
+      "physical": 207,
+      "code": 138
     },
     "tests/meridian/test_edge_cases.py": {
       "group": "application_tests",
@@ -206,8 +206,8 @@
     },
     "tests/meridian/test_plugins.py": {
       "group": "application_tests",
-      "physical": 214,
-      "code": 149
+      "physical": 216,
+      "code": 151
     },
     "tests/meridian/test_reporting_cli.py": {
       "group": "application_tests",

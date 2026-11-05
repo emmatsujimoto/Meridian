@@ -122,3 +122,86 @@ def test_cli_validate_unknown_model(tmp_path, capsys):
     config = _config(tmp_path, demand_model="weibull")
     assert main(["validate", "--data", "data/synthetic_sites.csv", "--config", config]) == 2
     assert "Unknown demand model 'weibull'" in capsys.readouterr().err
+
+
+def test_uniform_matches_moments():
+    samples = _sample("uniform")
+    assert samples.mean() == pytest.approx(100.0, rel=0.01)
+    assert samples.std() == pytest.approx(20.0, rel=0.03)
+    assert samples.max() <= 100.0 + np.sqrt(3) * 20.0
+
+
+def test_uniform_floored_at_zero():
+    assert _sample("uniform", mean=10.0, sd=20.0).min() == 0.0
+
+
+def test_model_statistics_constant():
+    stats = plugins.model_statistics(getModel("constant"), 50.0, 5.0, days=10, replications=2)
+    assert stats == {
+        "name": "constant",
+        "mean": 50.0,
+        "sd": 0.0,
+        "p05": 50.0,
+        "p50": 50.0,
+        "p95": 50.0,
+        "zero_share": 0.0,
+    }
+
+
+def test_model_statistics_reproducible():
+    model = getModel("lognormal")
+    first = plugins.model_statistics(model, 100.0, 30.0)
+    assert first == plugins.model_statistics(model, 100.0, 30.0)
+    assert first["p05"] < first["p50"] < first["p95"]
+
+
+def test_model_statistics_zero_share():
+    stats = plugins.model_statistics(getModel("normal"), 10.0, 20.0)
+    assert 0.2 < stats["zero_share"] < 0.4
+
+
+@pytest.mark.parametrize(
+    ("mean", "sd", "days", "replications"),
+    [(0.0, 1.0, 10, 1), (10.0, -1.0, 10, 1), (10.0, 1.0, 0, 1), (10.0, 1.0, 10, 101)],
+)
+def test_model_statistics_limits(mean, sd, days, replications):
+    with pytest.raises(InputError):
+        plugins.model_statistics(getModel("gamma"), mean, sd, days, replications)
+
+
+def test_preview_all_models():
+    rows = plugins.preview_models(None, 100.0, 20.0, days=30)
+    assert [row["name"] for row in rows] == [model.name for model in plugins.BUILT_IN_MODELS]
+
+
+def test_preview_named_models():
+    rows = plugins.preview_models(["gamma", "constant"], 100.0, 20.0, days=30)
+    assert [row["name"] for row in rows] == ["gamma", "constant"]
+
+
+def test_preview_unknown_model():
+    with pytest.raises(InputError, match="Unknown demand model"):
+        plugins.preview_models(["weibull"], 100.0, 20.0)
+
+
+def test_preview_table():
+    rows = plugins.preview_models(["constant"], 100.0, 20.0, days=5)
+    lines = plugins.preview_table(rows).splitlines()
+    assert lines[0].split() == ["model", "mean", "sd", "p05", "p50", "p95", "zero"]
+    assert lines[2].split() == ["constant", "100.0", "0.0", "100.0", "100.0", "100.0", "0.0%"]
+
+
+def test_cli_preview(capsys):
+    assert main(["models", "--preview", "constant", "--mean", "40", "--days", "7"]) == 0
+    assert "constant" in capsys.readouterr().out
+
+
+def test_cli_preview_json(capsys):
+    assert main(["models", "--preview", "--json", "--days", "30"]) == 0
+    rows = json.loads(capsys.readouterr().out)
+    assert len(rows) == len(plugins.BUILT_IN_MODELS)
+
+
+def test_cli_preview_invalid(capsys):
+    assert main(["models", "--preview", "gamma", "--mean", "0"]) == 2
+    assert "positive mean" in capsys.readouterr().err

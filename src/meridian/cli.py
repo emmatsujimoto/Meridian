@@ -4,6 +4,14 @@ import argparse
 import json
 import sys
 
+from meridian.bundles import verify_bundle
+from meridian.currency import (
+    convert_bundle,
+    cost_table,
+    load_rates,
+    multi_currency_rows,
+    write_multi_currency,
+)
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
@@ -25,6 +33,17 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument(
                 "--output", default="results", help="Parent folder for unique result bundles"
             )
+    convert = commands.add_parser("convert", help="Show a bundle's costs in another currency")
+    convert.add_argument("report", help="The bundle's summary.json")
+    convert.add_argument("--currency", required=True, help="Target currency code, e.g. EUR or GBP")
+    convert.add_argument("--rates", help="Exchange rates per USD (JSON); built-in rates if omitted")
+    convert.add_argument("--output", default="results", help="Folder for the converted files")
+    convert.add_argument(
+        "--also",
+        nargs="+",
+        default=[],
+        help="Extra currencies for a side-by-side costs_by_currency.csv, e.g. --also USD GBP",
+    )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
     return root
@@ -35,6 +54,17 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
+            return 0
+        if args.command == "convert":
+            rates = load_rates(args.rates)
+            summary_path, _ = convert_bundle(args.report, args.currency, rates, args.output)
+            converted = json.loads(summary_path.read_text(encoding="utf-8"))
+            print("\n".join(cost_table(converted)))
+            print(f"Converted files saved to {summary_path.parent}")
+            if args.also:
+                codes = list(dict.fromkeys([args.currency, *args.also]))
+                rows = multi_currency_rows(verify_bundle(args.report), codes, rates)
+                print(f"Side-by-side costs saved to {write_multi_currency(rows, args.output)}")
             return 0
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)

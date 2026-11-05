@@ -4,10 +4,13 @@ import argparse
 import json
 import sys
 
+from meridian.bundles import verify_bundle
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
 from meridian.reporting import compare_reports, export_run
+from meridian.server import api_key_from_environment, make_server
+from meridian.whatif import allocate, allocation_rows, allocation_summary, lane_demands
 
 
 def parser() -> argparse.ArgumentParser:
@@ -27,6 +30,21 @@ def parser() -> argparse.ArgumentParser:
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
+    serve = commands.add_parser("serve", help="Serve completed result bundles over HTTP")
+    serve.add_argument("--results", default="results", help="Results folder (default: results)")
+    serve.add_argument("--host", default="127.0.0.1", help="Address to listen on")
+    serve.add_argument("--port", type=int, default=8765, help="Port to listen on")
+    what_if = commands.add_parser(
+        "what-if", help="Share proposed plant capacities between a run's product-locations"
+    )
+    what_if.add_argument("summary", help="summary.json of a completed run")
+    what_if.add_argument(
+        "--capacity",
+        action="append",
+        required=True,
+        metavar="PRODUCT=KG",
+        help="Proposed daily capacity, e.g. nitrogen=1200; repeat for several products",
+    )
     return root
 
 
@@ -35,6 +53,34 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
+            return 0
+        if args.command == "what-if":
+            capacities = {}
+            for item in args.capacity:
+                product, _, amount = item.partition("=")
+                try:
+                    capacities[product] = float(amount)
+                except ValueError:
+                    raise InputError(
+                        f"Capacity must look like nitrogen=1200, not {item!r}"
+                    ) from None
+            allocations = allocate(lane_demands(verify_bundle(args.summary)), capacities)
+            output = {
+                "allocations": allocation_rows(allocations),
+                "summary": allocation_summary(allocations),
+            }
+            print(json.dumps(output, indent=2, allow_nan=False))
+            return 0
+        if args.command == "serve":
+            server = make_server(args.results, api_key_from_environment(), args.host, args.port)
+            host, port = server.server_address[:2]
+            print(f"Serving {args.results} on http://{host}:{port} (Ctrl+C to stop)")
+            try:
+                server.serve_forever()
+            except KeyboardInterrupt:
+                pass
+            finally:
+                server.server_close()
             return 0
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)

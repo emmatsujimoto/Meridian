@@ -4,7 +4,7 @@ from math import ceil, sqrt
 from statistics import fmean
 
 from meridian.demand import demand_traces
-from meridian.engine import simulate_lane
+from meridian.engine import capacity_summary, simulate_lane
 from meridian.models import Candidate, InputError, Lane, LaneResult, RunResult, Settings, number
 from stockpyl.eoq import economic_order_quantity
 from stockpyl.newsvendor import newsvendor_normal
@@ -47,7 +47,9 @@ def optimize_lane(lane: Lane, settings: Settings) -> LaneResult:
     training = demand_traces(lane, settings, "training")
     candidates = []
     for level in candidate_levels(lane, settings):
-        trials = [simulate_lane(lane, level, trace) for trace in training]
+        trials = [
+            simulate_lane(lane, level, trace, settings.enforce_capacity) for trace in training
+        ]
         fill = fmean(t.fill_rate for t in trials)
         candidates.append(
             Candidate(
@@ -56,7 +58,7 @@ def optimize_lane(lane: Lane, settings: Settings) -> LaneResult:
         )
     chosen = choose_candidate(tuple(candidates))
     validation = tuple(
-        simulate_lane(lane, chosen.base_stock_kg, trace)
+        simulate_lane(lane, chosen.base_stock_kg, trace, settings.enforce_capacity)
         for trace in demand_traces(lane, settings, "validation")
     )
     return LaneResult(
@@ -116,3 +118,25 @@ def deterministic_plan(lane: Lane, demands: tuple[float, ...]) -> dict:
         "total_cost": float(cost),
         "assumptions": "Zero initial stock; zero lead time; known demand; no capacity limits",
     }
+
+
+def capacity_report(result: RunResult) -> list[dict]:
+    """Storage use of each lane's chosen policy on the validation samples.
+
+    Lanes without a recorded capacity are left out. ``base_stock_above_capacity`` flags
+    chosen base-stock levels the site could never hold in full.
+    """
+    lanes = {lane.key: lane for lane in result.lanes}
+    rows = []
+    for lane_result in result.results:
+        lane = lanes[lane_result.lane_key]
+        if lane.storage_capacity_kg is None:
+            continue
+        row = capacity_summary(lane, lane_result.validation_trials)
+        row["base_stock_kg"] = lane_result.chosen_base_stock_kg
+        row["base_stock_above_capacity"] = (
+            lane_result.chosen_base_stock_kg > lane.storage_capacity_kg
+        )
+        row["capacity_enforced"] = result.settings.enforce_capacity
+        rows.append(row)
+    return rows

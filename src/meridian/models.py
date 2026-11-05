@@ -90,9 +90,11 @@ class Settings:
     demand_multiplier: float = 1.0
     service_target: float = 0.95
     stock_multipliers: tuple[float, ...] = (0.75, 1.0, 1.25, 1.5)
+    demand_model: str = "lognormal"
 
     def __post_init__(self):
         identifier(self.scenario_id, "scenario_id")
+        identifier(self.demand_model, "demand_model")
         for field, lower, upper in (
             ("horizon_days", 1, 366),
             ("replications", 1, 100),

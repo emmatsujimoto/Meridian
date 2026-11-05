@@ -1,15 +1,17 @@
 """Reproducible nonnegative demand traces, with separate training and validation."""
 
 from hashlib import sha256
-from math import log1p, sqrt
 
 import numpy as np
 
 from meridian.models import InputError, Lane, Settings
+from meridian.plugins import draw, getModel
 
 
 def demand_traces(lane: Lane, settings: Settings, phase: str) -> tuple[tuple[float, ...], ...]:
-    """Lognormal moments match configured mean/SD; multiplier scales both.
+    """The configured demand model draws each day; multiplier scales mean and SD.
+
+    The default lognormal model matches the configured mean and SD.
 
     Stable lane seeds make results independent of CSV row order and Python hash seeds.
     These synthetic demand assumptions are not fitted to any real supplier's demand.
@@ -21,11 +23,5 @@ def demand_traces(lane: Lane, settings: Settings, phase: str) -> tuple[tuple[flo
     mean = lane.daily_mean_kg * settings.demand_multiplier
     sd = lane.daily_sd_kg * settings.demand_multiplier
     shape = (settings.replications, settings.horizon_days)
-    if sd == 0:
-        samples = np.full(shape, mean)
-    else:
-        sigma_sq = log1p((sd / mean) ** 2)
-        samples = rng.lognormal(np.log(mean) - sigma_sq / 2, sqrt(sigma_sq), size=shape)
-    if not np.all(np.isfinite(samples)):
-        raise InputError("Demand settings overflow; reduce mean, deviation or multiplier")
+    samples = draw(getModel(settings.demand_model), rng, mean, sd, shape)
     return tuple(tuple(float(x) for x in row) for row in samples)

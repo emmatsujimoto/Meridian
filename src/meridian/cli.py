@@ -7,6 +7,7 @@ import sys
 from meridian.inputs import load_lanes, load_settings
 from meridian.models import InputError
 from meridian.planning import deterministic_plan, eoq_benchmark, run_scenario
+from meridian.plugins import describe_models, getModel
 from meridian.reporting import compare_reports, export_run
 
 
@@ -27,7 +28,19 @@ def parser() -> argparse.ArgumentParser:
             )
     compare = commands.add_parser("compare", help="Compare compatible summary.json files")
     compare.add_argument("reports", nargs="+")
+    models = commands.add_parser("models", help="List built-in and plugin demand models")
+    models.add_argument("--json", action="store_true", help="Print the list as JSON")
     return root
+
+
+def _models_text(rows: list[dict]) -> str:
+    """Aligned name, source and description columns for the models command."""
+    width = max(len(row["name"]) for row in rows)
+    source_width = max(len(row["source"]) for row in rows)
+    return "\n".join(
+        f"{row['name']:<{width}}  {row['source']:<{source_width}}  {row['description']}"
+        for row in rows
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -36,10 +49,21 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "compare":
             print(json.dumps(compare_reports(args.reports), indent=2, allow_nan=False))
             return 0
+        if args.command == "models":
+            rows = describe_models()
+            if args.json:
+                print(json.dumps(rows, indent=2))
+            else:
+                print(_models_text(rows))
+            return 0
         lanes = load_lanes(args.data)
         settings = load_settings(args.config)
+        model = getModel(settings.demand_model)
         if args.command == "validate":
-            print(f"Valid: {len(lanes)} product-location rows; scenario={settings.scenario_id}")
+            print(
+                f"Valid: {len(lanes)} product-location rows; scenario={settings.scenario_id}; "
+                f"demand model={model.name} ({model.source})"
+            )
         elif args.command == "benchmark":
             rows = []
             for lane in lanes:

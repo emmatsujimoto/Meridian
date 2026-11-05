@@ -7,25 +7,46 @@ import platform
 from dataclasses import asdict
 from datetime import datetime, timezone
 from importlib.metadata import version
+from math import sqrt
 from pathlib import Path
 from statistics import fmean, stdev
 from uuid import uuid4
 
 from meridian import __version__
 from meridian.bundles import verify_bundle
-from meridian.models import InputError, RunResult
+from meridian.models import InputError, Lane, RunResult
+
+
+def lead_time_demand(lane: Lane, demand_multiplier: float) -> tuple[float, float]:
+    """Mean and standard deviation (kg) of demand over the lane's lead time.
+
+    Daily demand is independent, so the mean scales with the lead time and the standard
+    deviation with its square root. Both include the scenario's demand multiplier. A zero
+    lead time gives zero, because same-day deliveries need no lead-time cover.
+    """
+    days = lane.lead_time_days
+    mean_kg = lane.daily_mean_kg * demand_multiplier * days
+    sd_kg = lane.daily_sd_kg * demand_multiplier * sqrt(days)
+    return mean_kg, sd_kg
 
 
 def summary(result: RunResult) -> dict:
     """Summaries use mean replicate costs and volume-weighted portfolio service."""
     rows = []
+    lanes = {lane.key: lane for lane in result.lanes}
     for lane_result in result.results:
+        lane = lanes[lane_result.lane_key]
+        lt_mean_kg, lt_sd_kg = lead_time_demand(lane, result.settings.demand_multiplier)
+        daily_demand_kg = lane.daily_mean_kg * result.settings.demand_multiplier
         trials = lane_result.validation_trials
         costs = [t.total_cost for t in trials]
         rows.append(
             {
                 "lane": lane_result.lane_key,
                 "base_stock_kg": lane_result.chosen_base_stock_kg,
+                "lead_time_demand_kg": lt_mean_kg,
+                "lead_time_demand_sd_kg": lt_sd_kg,
+                "base_stock_cover_days": lane_result.chosen_base_stock_kg / daily_demand_kg,
                 "training_target_met": lane_result.training_target_met,
                 "validation_mean_cost": fmean(costs),
                 "validation_cost_sd": stdev(costs) if len(costs) > 1 else 0.0,
@@ -121,12 +142,12 @@ def export_run(result: RunResult, output_root: str | Path) -> Path:
         f"Mean total cost: ${report['total_mean_cost']:,.2f}.",
         f"Volume-weighted immediate fill rate: {report['portfolio_fill_rate']:.2%}.",
         "",
-        "| Product-location | Base stock (kg) | Mean cost (USD) | Mean fill rate | Target met on validation |",
-        "|---|---:|---:|---:|---|",
+        "| Product-location | Base stock (kg) | Lead-time demand (kg) | Mean cost (USD) | Mean fill rate | Target met on validation |",
+        "|---|---:|---:|---:|---:|---|",
     ]
     for row in report["lanes"]:
         lines.append(
-            f"| {row['lane']} | {row['base_stock_kg']:,.0f} | {row['validation_mean_cost']:,.2f} | {row['validation_mean_fill_rate']:.2%} | {row['validation_target_met']} |"
+            f"| {row['lane']} | {row['base_stock_kg']:,.0f} | {row['lead_time_demand_kg']:,.0f} | {row['validation_mean_cost']:,.2f} | {row['validation_mean_fill_rate']:.2%} | {row['validation_target_met']} |"
         )
     lines.extend(["", *[f"- {note}" for note in report["model_notes"]], ""])
     (destination / "report.md").write_text("\n".join(lines), encoding="utf-8")

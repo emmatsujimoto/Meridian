@@ -45,6 +45,23 @@ python -m pytest
 Every run prints a unique result folder. Open its `report.md` for the concise
 summary, or `summary.json` for the complete settings and structured results.
 `COMPLETE.json` confirms all outputs were written and records their hashes.
+
+Each row of `lanes.csv` (and each lane in `summary.json`) also shows the demand the lane
+must cover while a delivery is on its way:
+
+| Column | Meaning |
+|---|---|
+| `lead_time_demand_kg` | Mean demand over the lane's lead time: daily mean × demand multiplier × lead-time days |
+| `lead_time_demand_sd_kg` | Standard deviation of that demand: daily SD × demand multiplier × √(lead-time days) |
+| `base_stock_cover_days` | Days of mean demand the chosen base stock covers: base stock ÷ (daily mean × demand multiplier) |
+
+Comparing `base_stock_kg` with `lead_time_demand_kg` shows how much of the chosen stock
+level covers the lead time and how much is protection against variability and the daily
+review period. Lanes with a zero lead time show zero. For example, a lane with 800 kg of
+mean daily demand, a 2-day lead time and a 2,600 kg base stock has 1,600 kg of lead-time
+demand and 3.25 days of cover: the remaining 1,000 kg covers the review day and demand
+variability. `report.md` adds the mean as a
+"Lead-time demand (kg)" column.
 The result folders are ignored by Git, so rerunning the tool does not change source files.
 
 For the full example, use `config/baseline.json`. To study a hypothetical 25% demand

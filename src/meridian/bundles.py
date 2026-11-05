@@ -3,6 +3,7 @@
 import hashlib
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 
 from meridian.models import InputError, identifier, integer, number
@@ -84,3 +85,50 @@ def validate_report(report: dict) -> dict:
     if abs(lane_cost - total) > max(1e-6, total * 1e-9):
         raise InputError("Lane costs do not reconcile to total cost")
     return report
+
+
+def _completed_utc(manifest: dict) -> datetime | None:
+    """Completion time from a manifest as an aware UTC datetime, or None if absent or invalid."""
+    value = manifest.get("completed_utc")
+    if not isinstance(value, str):
+        return None
+    try:
+        completed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if completed.tzinfo is None:
+        return None
+    return completed.astimezone(timezone.utc)
+
+
+def list_bundles(output_root: str | Path, limit: int | None = None) -> list[dict]:
+    """Completed result bundles in a results folder, most recent first.
+
+    Each entry has the bundle folder name, its scenario id and its completion time (UTC).
+    Folders without a readable COMPLETE.json and summary.json, or with an invalid completion
+    time, are left out. ``limit`` keeps only the most recent bundles.
+    """
+    if limit is not None and limit < 1:
+        raise InputError("limit must be at least 1")
+    root = Path(output_root)
+    if not root.is_dir():
+        raise InputError(f"Results folder not found: {root}")
+    entries = []
+    for manifest_path in root.glob("*/COMPLETE.json"):
+        try:
+            manifest = _json_object(manifest_path)
+            report = _json_object(manifest_path.parent / "summary.json")
+        except InputError:
+            continue
+        completed = _completed_utc(manifest)
+        if completed is None:
+            continue
+        entries.append(
+            {
+                "bundle": manifest_path.parent.name,
+                "scenario_id": str(report.get("scenario_id", "")),
+                "completed_utc": completed,
+            }
+        )
+    entries.sort(key=lambda entry: (entry["completed_utc"], entry["bundle"]), reverse=True)
+    return entries if limit is None else entries[:limit]
